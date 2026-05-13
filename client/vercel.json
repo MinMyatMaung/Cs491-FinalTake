@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://cs491-finaltake.onrender.com/api/:path*" },
-    { "source": "/auth/:path*", "destination": "https://cs491-finaltake.onrender.com/auth/:path*" }
+    { "source": "/auth/:path*", "destination": "https://cs491-finaltake.onrender.com/auth/:path*" },
+    { "source": "/((?!api|auth).*)", "destination": "/index.html" }
   ]
 }

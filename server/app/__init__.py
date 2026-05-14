@@ -1,7 +1,10 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_caching import Cache
 from .config import Config
 from .models import db
+
+cache = Cache()
 
 
 def create_app(test_config=None):
@@ -10,8 +13,9 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    # Initialize database
+    # Initialize extensions
     db.init_app(app)
+    cache.init_app(app)
 
     # Allow requests from the Vite dev server
     CORS(app, resources={

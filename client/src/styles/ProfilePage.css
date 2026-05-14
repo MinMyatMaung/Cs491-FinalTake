@@ -7,27 +7,34 @@
 /* Header — matches SearchPage layout */
 .profile-header {
   text-align: center;
-  padding: 40px 20px 30px;
-  position: relative;
+  padding: 20px 20px 15px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
 }
 
 .profile-header .header-content {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  gap: 20px;
-  flex-wrap: wrap;
+  padding: 0 20px;
+}
+
+.profile-header .header-content .home-button {
+  grid-column: 2;
 }
 
 .profile-header .header-actions {
+  grid-column: 3;
   display: flex;
   gap: 15px;
   align-items: center;
-  position: absolute;
-  right: 20px;
-  top: 40px;
+  justify-content: flex-end;
 }
 
 /* Content area */
@@ -226,9 +233,7 @@
   }
 
   .profile-header .header-actions {
-    position: static;
     justify-content: center;
-    margin-top: 10px;
   }
 }
 
@@ -355,4 +360,39 @@
   width: 20px;
   text-align: left;
   flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .profile-content {
+    padding: 10px;
+  }
+
+  .profile-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 80px;
+    padding: 12px 8px;
+  }
+
+  .stat-number {
+    font-size: 22px;
+  }
+
+  .favorites-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-review-card {
+    padding: 8px;
+  }
+
+  .profile-review-image {
+    width: 48px;
+    height: 72px;
+  }
 }

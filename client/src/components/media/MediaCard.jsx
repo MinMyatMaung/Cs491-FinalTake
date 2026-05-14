@@ -37,7 +37,7 @@ const MediaCard = ({ id, title, type, rating, imageUrl }) => {
     <div className="media-card" onClick={handleClick}>
       <div className="media-image">
         {imageUrl ? (
-          <img src={imageUrl} alt={title} />
+          <img src={imageUrl} alt={title} loading="lazy" />
         ) : (
           <div className="placeholder-image">
             <span>No Image</span>
@@ -46,7 +46,7 @@ const MediaCard = ({ id, title, type, rating, imageUrl }) => {
       </div>
       <div className="media-info">
         <h3 className="media-title">{title}</h3>
-        <span className="media-type">{type}</span>
+        <span className={`media-type type-${type}`}>{type}</span>
         <div className="media-rating">
           {renderStars(safeRating)}
           <span className="rating-value">{safeRating.toFixed(1)}</span>

@@ -1,5 +1,14 @@
+import re
 import requests
 from flask import current_app
+
+
+def _strip_html(text):
+    if not text:
+        return ''
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', '', text)
+    return text.strip()
 
 
 class GoogleBooksService:
@@ -41,7 +50,7 @@ class GoogleBooksService:
             'rating': round(rating, 1) if rating else 0,
             'imageUrl': image_url if image_url else None,
             'releaseYear': year,
-            'overview': volume_info.get('description', ''),
+            'overview': _strip_html(volume_info.get('description', '')),
             'author': author_str,
         }
 
@@ -94,7 +103,7 @@ class GoogleBooksService:
             'author': author_str,
             'creator': author_str,
             'director': author_str,
-            'description': volume_info.get('description', ''),
+            'description': _strip_html(volume_info.get('description', '')),
             'genre': genres,
             'imageUrl': image_url if image_url else None,
             'backdropUrl': backdrop_url if backdrop_url else None,

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy.orm import joinedload
 from app.models import db
 from app.models.review import Review
 from app.models.user import User
@@ -27,6 +28,7 @@ def get_reviews():
 
     reviews = (
         Review.query
+        .options(joinedload(Review.user))
         .filter_by(media_type=media_type, media_id=media_id)
         .order_by(Review.created_at.desc())
         .all()
@@ -43,6 +45,7 @@ def get_my_reviews():
 
     reviews = (
         Review.query
+        .options(joinedload(Review.user))
         .filter_by(user_id=user.id)
         .order_by(Review.created_at.desc())
         .all()

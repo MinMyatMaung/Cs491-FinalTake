@@ -26,3 +26,6 @@ class Config:
     GBOOKS_BASE_URL = 'https://www.googleapis.com/books/v1'
 
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() in ('1', 'true')
+
+    CACHE_TYPE = 'SimpleCache'
+    CACHE_DEFAULT_TIMEOUT = 300

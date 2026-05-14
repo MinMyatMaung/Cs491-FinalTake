@@ -178,50 +178,47 @@ const SearchPage = () => {
   return (
     <div className="search-page">
       <header className="search-header">
-        <div className="header-content">
-          <button 
-            className="home-button"
-            onClick={handleHomeClick}
-            title="Go to Home"
+        <button className="header-logo" onClick={handleHomeClick} title="Go to Home">
+          FinalTake
+        </button>
+        <div className="header-actions">
+          <button
+            className="btn btn-theme"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
-            <h1 className="site-title">
-              <span className="star-icon">★</span>
-              FinalTake
-              <span className="star-icon">★</span>
-            </h1>
-            <p className="site-tagline">Share Your Entertainment Experience</p>
+            {theme === 'light' ? '☽' : '☀'}
           </button>
-          <div className="header-actions">
-            <button 
-              className="btn btn-theme" 
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? '☽' : '☀'}
-            </button>
-            {user ? (
-              <>
-                <span className="user-email">{user.email}</span>
-                <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
-                  Profile
-                </button>
-                <button className="btn btn-secondary" onClick={handleLogout}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button 
-                className="btn btn-primary" 
-                onClick={() => navigate('/login')}
-              >
-                Login
+          {user ? (
+            <>
+              <span className="user-email">{user.email}</span>
+              <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
+                Profile
               </button>
-            )}
-          </div>
+              <button className="btn btn-secondary" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/login')}
+            >
+              Login
+            </button>
+          )}
         </div>
       </header>
 
       <div className="search-container">
+        <button className="home-button" onClick={handleHomeClick} title="Go to Home">
+          <h1 className="site-title">
+            <span className="star-icon">★</span>
+            FinalTake
+            <span className="star-icon">★</span>
+          </h1>
+          <p className="site-tagline">Share Your Entertainment Experience</p>
+        </button>
         <form className="search-form" onSubmit={handleSearch}>
           <div className="search-input-group" ref={searchWrapperRef} style={{ position: 'relative' }}>
             <input

@@ -476,6 +476,59 @@
   margin-bottom: 14px;
 }
 
+.filter-menu-wrapper {
+  position: relative;
+}
+
+.filter-menu-button {
+  min-width: 140px;
+}
+
+.filter-menu {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #111827;
+  border: 1px solid #2d4b7c;
+  border-radius: 12px;
+  padding: 10px;
+  width: 220px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.filter-section-title {
+  color: #8fb8ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 8px 10px;
+  text-transform: uppercase;
+}
+
+.filter-menu-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-menu-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.filter-menu-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 10px 0;
+}
+
 @media (max-width: 768px) {
   .search-page {
     padding: 10px;

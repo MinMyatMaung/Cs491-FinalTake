@@ -11,12 +11,10 @@ cache = Cache()
 def _ensure_auth_columns(app):
     """Add auth columns for existing demo SQLite/Postgres databases."""
     required_columns = {
-        'auth_provider': "VARCHAR(20) NOT NULL DEFAULT 'local'",
         'failed_login_attempts': 'INTEGER NOT NULL DEFAULT 0',
         'locked_until': 'TIMESTAMP NULL',
         'twofa_enabled': 'BOOLEAN NOT NULL DEFAULT FALSE',
-        'twofa_code_hash': 'VARCHAR(255) NULL',
-        'twofa_expires_at': 'TIMESTAMP NULL',
+        'totp_secret': 'VARCHAR(64) NULL',
         'reset_token_hash': 'VARCHAR(255) NULL',
         'reset_token_expires_at': 'TIMESTAMP NULL',
     }

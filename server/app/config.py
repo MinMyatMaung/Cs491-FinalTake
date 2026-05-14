@@ -25,9 +25,6 @@ class Config:
     GBOOKS_API_KEY = os.getenv('GBOOKS_API_KEY', '')
     GBOOKS_BASE_URL = 'https://www.googleapis.com/books/v1'
 
-    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
-    GOOGLE_OAUTH_DEMO_ENABLED = os.getenv('GOOGLE_OAUTH_DEMO_ENABLED', 'True').lower() in ('1', 'true')
-
     EMAIL_PROVIDER_DOMAINS = {
         domain.strip().lower()
         for domain in os.getenv(

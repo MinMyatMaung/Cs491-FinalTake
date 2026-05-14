@@ -53,6 +53,8 @@ const TAGLINE_QUOTES = [
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
+  const [sortBy, setSortBy] = useState("default");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [mediaResults, setMediaResults] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingShows, setTrendingShows] = useState([]);
@@ -208,6 +210,27 @@ const SearchPage = () => {
     { key: 'top-rated', label: 'Top Rated Movies', data: topRatedMovies },
   ];
 
+  const sortedResults = [...mediaResults].sort((a, b) => {
+    if (sortBy === 'highest') {
+      return (b.rating || 0) - (a.rating || 0);
+    }
+
+    if (sortBy === 'lowest') {
+      return (a.rating || 0) - (b.rating || 0);
+    }
+
+    if (sortBy === 'az') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+
+    if (sortBy === 'newest') {
+      return new Date(b.releaseDate || b.release_date || 0)
+        - new Date(a.releaseDate || a.release_date || 0);
+    }
+
+    return 0;
+  });
+
   return (
     <div className="search-page">
       <header className="search-header">
@@ -285,21 +308,74 @@ const SearchPage = () => {
                 ))}
               </ul>
             )}
-            <select
-              className="type-filter"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              <option value="movie">Movies</option>
-              <option value="tv">TV Shows</option>
-              <option value="game">Games</option>
-              <option value="book">Books</option>
-            </select>
+            <div className="filter-menu-wrapper">
+              <button
+                type="button"
+                className="type-filter filter-menu-button"
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+              >
+                Filters ▾
+              </button>
+
+              {showFilterMenu && (
+                <div className="filter-menu">
+
+                  <div className="filter-section-title">Media Type</div>
+
+                  {[
+                    ['all', 'All Types'],
+                    ['movie', 'Movies'],
+                    ['tv', 'TV Shows'],
+                    ['game', 'Games'],
+                    ['book', 'Books'],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className="filter-menu-item"
+                      onClick={() => setSelectedType(value)}
+                    >
+                      <span>{selectedType === value ? '✓' : ''}</span>
+                      {label}
+                    </button>
+                  ))}
+
+                  <div className="filter-menu-divider"></div>
+
+                  <div className="filter-section-title">Sort By</div>
+
+                  {[
+                    ['default', 'Default'],
+                    ['highest', 'Highest Rated'],
+                    ['lowest', 'Lowest Rated'],
+                    ['popular', 'Most Popular'],
+                    ['az', 'A–Z'],
+                    ['newest', 'Newest'],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className="filter-menu-item"
+                      onClick={() => setSortBy(value)}
+                    >
+                      <span>{sortBy === value ? '✓' : ''}</span>
+                      {label}
+                    </button>
+                  ))}
+
+                </div>
+              )}
+            </div>
           </div>
           <div className="search-buttons">
-            <button type="submit" className="btn btn-primary">Search</button>
-            <button type="button" className="btn btn-secondary" onClick={handleReset}>
+            <button type="submit" className="btn btn-primary">
+              Search
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleReset}
+            >
               Reset
             </button>
           </div>
@@ -324,7 +400,7 @@ const SearchPage = () => {
               </div>
             ) : mediaResults.length > 0 ? (
               <div className="media-grid">
-                {mediaResults.map((media) => (
+                {sortedResults.map((media) => (
                   <MediaCard
                     key={`${media.type}-${media.id}`}
                     id={media.id}

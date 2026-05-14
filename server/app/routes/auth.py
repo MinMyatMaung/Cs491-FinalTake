@@ -1,9 +1,12 @@
+import base64
 import hashlib
+import io
 import re
 import secrets
 from datetime import datetime, timedelta
 
-import requests
+import pyotp
+import qrcode
 from flask import Blueprint, current_app, jsonify, request
 from werkzeug.security import check_password_hash
 
@@ -81,11 +84,27 @@ def _save_password(user, password):
     db.session.add(PasswordHistory(user_id=user.id, password_hash=user.password_hash))
 
 
-def _generate_2fa_code(user):
-    code = f'{secrets.randbelow(1_000_000):06d}'
-    user.twofa_code_hash = _hash_secret(code)
-    user.twofa_expires_at = datetime.utcnow() + timedelta(minutes=5)
-    return code
+def _build_totp_setup(user):
+    uri = pyotp.TOTP(user.totp_secret).provisioning_uri(
+        name=user.email,
+        issuer_name='FinalTake',
+    )
+    qr_image = qrcode.make(uri)
+    buffer = io.BytesIO()
+    qr_image.save(buffer, format='PNG')
+    qr_data = base64.b64encode(buffer.getvalue()).decode('ascii')
+
+    return {
+        'otpauth_uri': uri,
+        'qr_code_data_url': f'data:image/png;base64,{qr_data}',
+        'manual_entry_key': user.totp_secret,
+    }
+
+
+def _verify_totp(user, code):
+    if not user.totp_secret:
+        return False
+    return pyotp.TOTP(user.totp_secret).verify(code, valid_window=1)
 
 
 def _is_locked(user):
@@ -109,16 +128,6 @@ def _record_failed_login(user):
 def _clear_login_failures(user):
     user.failed_login_attempts = 0
     user.locked_until = None
-
-
-def _unique_username(base):
-    cleaned = re.sub(r'[^a-zA-Z0-9_]', '', base or '')[:40] or 'user'
-    username = cleaned
-    suffix = 1
-    while User.query.filter_by(username=username).first():
-        suffix += 1
-        username = f'{cleaned[:35]}{suffix}'
-    return username
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -150,12 +159,24 @@ def register():
     if User.query.filter_by(username=username).first():
         return jsonify({'error': 'Username already taken'}), 409
 
-    user = User(username=username, email=email, twofa_enabled=twofa_enabled)
+    user = User(username=username, email=email, twofa_enabled=False)
+    if twofa_enabled:
+        user.totp_secret = pyotp.random_base32()
+
     db.session.add(user)
     _save_password(user, password)
     db.session.commit()
 
-    return jsonify({'message': 'User created successfully', 'user': user.to_dict()}), 201
+    response = {'message': 'User created successfully', 'user': user.to_dict()}
+    if twofa_enabled:
+        response.update({
+            'message': 'Set up two-factor authentication',
+            'requires_2fa_setup': True,
+            'user_id': user.id,
+            'twofa_setup': _build_totp_setup(user),
+        })
+
+    return jsonify(response), 201
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -183,14 +204,32 @@ def login():
 
     _clear_login_failures(user)
 
+    if user.totp_secret and not user.twofa_enabled:
+        db.session.commit()
+        return jsonify({
+            'message': 'Set up two-factor authentication',
+            'requires_2fa_setup': True,
+            'user_id': user.id,
+            'twofa_setup': _build_totp_setup(user),
+        }), 202
+
     if user.twofa_enabled:
-        code = _generate_2fa_code(user)
+        if not user.totp_secret:
+            user.totp_secret = pyotp.random_base32()
+            user.twofa_enabled = False
+            db.session.commit()
+            return jsonify({
+                'message': 'Set up two-factor authentication',
+                'requires_2fa_setup': True,
+                'user_id': user.id,
+                'twofa_setup': _build_totp_setup(user),
+            }), 202
+
         db.session.commit()
         return jsonify({
             'message': 'Two-factor verification required',
             'requires_2fa': True,
             'user_id': user.id,
-            'demo_2fa_code': code,
         }), 202
 
     db.session.commit()
@@ -206,20 +245,36 @@ def verify_2fa():
     if not user or not code:
         return jsonify({'error': 'Verification code is required'}), 400
 
-    if not user.twofa_code_hash or not user.twofa_expires_at:
-        return jsonify({'error': 'No active verification code'}), 400
+    if not user.twofa_enabled:
+        return jsonify({'error': 'Two-factor authentication is not enabled'}), 400
 
-    if user.twofa_expires_at < datetime.utcnow():
-        return jsonify({'error': 'Verification code expired'}), 400
-
-    if not secrets.compare_digest(user.twofa_code_hash, _hash_secret(code)):
+    if not _verify_totp(user, code):
         return jsonify({'error': 'Invalid verification code'}), 401
 
-    user.twofa_code_hash = None
-    user.twofa_expires_at = None
     db.session.commit()
 
     return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
+
+
+@auth_bp.route('/confirm-2fa', methods=['POST'])
+def confirm_2fa():
+    data = request.get_json() or {}
+    user = User.query.get(data.get('user_id'))
+    code = (data.get('code') or '').strip()
+
+    if not user or not code:
+        return jsonify({'error': 'Verification code is required'}), 400
+
+    if not user.totp_secret:
+        return jsonify({'error': 'No two-factor setup is pending'}), 400
+
+    if not _verify_totp(user, code):
+        return jsonify({'error': 'Invalid verification code'}), 401
+
+    user.twofa_enabled = True
+    db.session.commit()
+
+    return jsonify({'message': 'Two-factor authentication enabled', 'user': user.to_dict()}), 200
 
 
 @auth_bp.route('/forgot-password', methods=['POST'])
@@ -238,9 +293,6 @@ def forgot_password():
         user.reset_token_expires_at = datetime.utcnow() + timedelta(minutes=15)
         response['demo_reset_token'] = token
         response['demo_reset_url'] = f'/login?reset_token={token}&email={email}'
-
-        if user.twofa_enabled:
-            response['demo_2fa_code'] = _generate_2fa_code(user)
 
         db.session.commit()
 
@@ -269,11 +321,9 @@ def reset_password():
         return jsonify({'error': 'Invalid or expired reset link'}), 400
 
     if user.twofa_enabled:
-        if not code or not user.twofa_code_hash or not user.twofa_expires_at:
+        if not code:
             return jsonify({'error': 'Two-factor code is required'}), 400
-        if user.twofa_expires_at < datetime.utcnow():
-            return jsonify({'error': 'Two-factor code expired'}), 400
-        if not secrets.compare_digest(user.twofa_code_hash, _hash_secret(code)):
+        if not _verify_totp(user, code):
             return jsonify({'error': 'Invalid two-factor code'}), 401
 
     password_error = _validate_password(new_password)
@@ -286,64 +336,11 @@ def reset_password():
     _save_password(user, new_password)
     user.reset_token_hash = None
     user.reset_token_expires_at = None
-    user.twofa_code_hash = None
-    user.twofa_expires_at = None
     _clear_login_failures(user)
     db.session.commit()
 
     return jsonify({'message': 'Password reset successful'}), 200
 
-
-@auth_bp.route('/google', methods=['POST'])
-def google_login():
-    data = request.get_json() or {}
-    id_token = data.get('id_token')
-    email = None
-    name = None
-
-    if id_token:
-        try:
-            res = requests.get(
-                'https://oauth2.googleapis.com/tokeninfo',
-                params={'id_token': id_token},
-                timeout=5,
-            )
-            res.raise_for_status()
-            claims = res.json()
-        except requests.RequestException:
-            return jsonify({'error': 'Unable to verify Google account'}), 401
-
-        expected_audience = current_app.config.get('GOOGLE_CLIENT_ID')
-        if expected_audience and claims.get('aud') != expected_audience:
-            return jsonify({'error': 'Google token audience mismatch'}), 401
-        if claims.get('email_verified') not in (True, 'true', 'True'):
-            return jsonify({'error': 'Google email is not verified'}), 401
-
-        email = _normalize_email(claims.get('email'))
-        name = claims.get('name')
-    elif current_app.config.get('GOOGLE_OAUTH_DEMO_ENABLED'):
-        email = _normalize_email(data.get('email') or 'demo.google@gmail.com')
-        name = data.get('name') or 'Google Demo User'
-    else:
-        return jsonify({'error': 'Google token is required'}), 400
-
-    email_error = _validate_email(email)
-    if email_error:
-        return jsonify({'error': email_error}), 400
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        username_base = data.get('username') or name or email.split('@')[0]
-        user = User(
-            username=_unique_username(username_base),
-            email=email,
-            auth_provider='google',
-        )
-        user.set_password(secrets.token_urlsafe(32))
-        db.session.add(user)
-        db.session.commit()
-
-    return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
 
 @auth_bp.route('/update-username', methods=['POST'])
 def update_username():

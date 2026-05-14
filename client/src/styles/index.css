@@ -10,11 +10,11 @@
   --header-bg: #F8F8F8;
 
   /* Accent Colors (same for both themes) */
-  --title-yellow: #F4E6C3;
-  --star-gold: #FFD700;
-  --element-lavender: #7B86B5;
-  --content-tangerine: #FF8C42;
-  --system-indigo: #5C6B9A;
+  --title-yellow: #1A3A6E;
+  --star-gold: #F59E0B;
+  --element-lavender: #3B82F6;
+  --content-tangerine: #1A3A6E;
+  --system-indigo: #1D4ED8;
 
   /* Neutral */
   --white: #FFFFFF;
@@ -25,13 +25,16 @@
 
 /* Dark Mode */
 [data-theme="dark"] {
-  --bg-primary: #0a1628;
-  --bg-secondary: #1a2840;
-  --text-primary: #B8D4E8;
-  --text-secondary: #9DB4D4;
-  --border-color: #2a3850;
-  --card-bg: #1a2840;
-  --header-bg: #0f1a2e;
+  --bg-primary: #070E1A;
+  --bg-secondary: #0D1B2E;
+  --text-primary: #D4E8FF;
+  --text-secondary: #6B94C4;
+  --border-color: #1A3252;
+  --card-bg: #0D1B2E;
+  --header-bg: #070E1A;
+  --title-yellow: #FFFFFF;
+  --content-tangerine: #E0EEFF;
+  --element-lavender: #4F8EF7;
 }
 
 * {
@@ -71,7 +74,7 @@ code {
 .btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
   transition: all 0.3s ease;

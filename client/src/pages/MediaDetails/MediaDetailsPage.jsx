@@ -245,9 +245,15 @@ const MediaDetailsPage = () => {
   return (
     <div className="media-details-page">
       <header className="search-header">
-        <button className="header-logo" onClick={() => navigate('/search')} title="Go to Home">
-          FinalTake
-        </button>
+        <div className="header-brand">
+          <button className="header-logo" onClick={() => navigate('/search')} title="Go to Home">
+            <span className="logo-accent">Final</span>Take
+          </button>
+          <span className="header-tagline">
+            <span className="header-tagline-line1">Don't just watch it.</span>
+            <span className="header-tagline-line2"><em>Play</em> it, <em>read</em> it, <em>rate</em> it.</span>
+          </span>
+        </div>
         <div className="header-actions">
           <button
             className="btn btn-theme"

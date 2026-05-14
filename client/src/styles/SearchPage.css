@@ -18,14 +18,45 @@
   border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-tagline {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.header-tagline-line1 {
+  color: var(--text-secondary);
+}
+
+.header-tagline-line2 {
+  color: var(--text-secondary);
+  font-style: normal;
+}
+
+.header-tagline-line2 em {
+  font-style: normal;
+  font-weight: 700;
+  color: #A8C8E8;
+}
+
 .header-logo {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--title-yellow);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   white-space: nowrap;
   transition: transform 0.2s ease;
 }
@@ -34,9 +65,8 @@
   transform: scale(1.03);
 }
 
-.header-logo .star-icon {
-  color: var(--star-gold);
-  margin: 0 4px;
+.header-logo .logo-accent {
+  color: var(--element-lavender);
 }
 
 .home-button {
@@ -77,23 +107,36 @@
 }
 
 .site-title {
-  color: var(--title-yellow);
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-bottom: 8px;
+  text-shadow: none;
+}
+
+.logo-accent {
+  color: var(--element-lavender);
 }
 
 .star-icon {
-  color: var(--star-gold);
-  margin: 0 10px;
-  font-size: 40px;
+  display: none;
 }
 
 .site-tagline {
   color: var(--text-secondary);
-  font-size: 18px;
+  font-size: 16px;
   font-style: italic;
+  max-width: 600px;
+  margin: 0 auto 4px;
+  line-height: 1.5;
+}
+
+.site-tagline-attribution {
+  color: var(--element-lavender);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .search-container {
@@ -293,6 +336,31 @@
 }
 
 /* Trending horizontal scroll row */
+.trending-row-wrapper {
+  position: relative;
+}
+
+.trending-row-wrapper::before,
+.trending-row-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 12px;
+  width: 80px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.trending-row-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+.trending-row-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-primary), transparent);
+}
+
 .trending-row {
   display: flex;
   gap: 20px;

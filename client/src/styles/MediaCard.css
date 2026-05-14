@@ -65,7 +65,7 @@
 .media-type.type-movie  { background-color: #E50914; }
 .media-type.type-tv     { background-color: #1DB954; }
 .media-type.type-game   { background-color: #FF8C00; }
-.media-type.type-book   { background-color: #7B86B5; }
+.media-type.type-book   { background-color: #4F8EF7; }
 
 @media (max-width: 480px) {
   .media-image {

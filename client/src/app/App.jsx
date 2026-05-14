@@ -26,11 +26,11 @@ function App() {
             {/* Login page */}
             <Route path="/login" element={<LoginPage />} />
             
-            {/* Search page - protected */}
-            <Route path="/search" element={<PrivateRoute><SearchPage /></PrivateRoute>} />
-            
-            {/* Media details page - protected */}
-            <Route path="/media/:type/:id" element={<PrivateRoute><MediaDetailsPage /></PrivateRoute>} />
+            {/* Search page - public */}
+            <Route path="/search" element={<SearchPage />} />
+
+            {/* Media details page - public */}
+            <Route path="/media/:type/:id" element={<MediaDetailsPage />} />
 
             {/* Profile page - protected */}
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

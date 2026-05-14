@@ -87,10 +87,14 @@ class RAWGService:
         }
 
     def get_trending_games(self, page=1):
-        """Get trending games — most recently added to user libraries, quality-filtered"""
+        """Get trending games — most added from the last 3 years, quality-filtered"""
+        from datetime import date
+        today = date.today()
+        three_years_ago = today.replace(year=today.year - 3)
         data = self._get('/games', {
             'ordering': '-added',
             'metacritic': '70,100',
+            'dates': f'{three_years_ago},{today}',
             'page': page,
             'page_size': 20,
         })

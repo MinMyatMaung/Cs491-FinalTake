@@ -200,6 +200,25 @@ const MediaDetailsPage = () => {
     return media.director || media.creator || 'Unknown';
   };
 
+  if (!user) {
+    return (
+      <div className="media-details-page">
+        <div className="error-container">
+          <h2>Sign in to view details</h2>
+          <p>Create a free account to explore movies, games, books, and TV shows.</p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button className="btn btn-secondary" onClick={() => navigate('/login', { state: { mode: 'register' } })}>
+              Sign Up
+            </button>
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>
+              Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="media-details-page">
@@ -226,9 +245,15 @@ const MediaDetailsPage = () => {
   return (
     <div className="media-details-page">
       <header className="search-header">
-        <button className="header-logo" onClick={() => navigate('/search')} title="Go to Home">
-          FinalTake
-        </button>
+        <div className="header-brand">
+          <button className="header-logo" onClick={() => navigate('/search')} title="Go to Home">
+            <span className="logo-accent">Final</span>Take
+          </button>
+          <span className="header-tagline">
+            <span className="header-tagline-line1">Don't just watch it.</span>
+            <span className="header-tagline-line2"><em>Play</em> it, <em>read</em> it, <em>rate</em> it.</span>
+          </span>
+        </div>
         <div className="header-actions">
           <button
             className="btn btn-theme"
@@ -243,14 +268,19 @@ const MediaDetailsPage = () => {
               <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
                 Profile
               </button>
-              <button className="btn btn-secondary" onClick={() => { localStorage.removeItem('user'); navigate('/login'); }}>
+              <button className="btn btn-secondary" onClick={() => { localStorage.removeItem('user'); navigate('/search'); }}>
                 Logout
               </button>
             </>
           ) : (
-            <button className="btn btn-primary" onClick={() => navigate('/login')}>
-              Login
-            </button>
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate('/login', { state: { mode: 'register' } })}>
+                Sign Up
+              </button>
+              <button className="btn btn-primary" onClick={() => navigate('/login')}>
+                Login
+              </button>
+            </>
           )}
         </div>
       </header>

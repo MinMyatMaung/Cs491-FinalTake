@@ -22,8 +22,10 @@ const HorizontalScrollRow = ({ children }) => {
   }, []);
 
   return (
-    <div className="trending-row" ref={rowRef}>
-      {children}
+    <div className="trending-row-wrapper">
+      <div className="trending-row" ref={rowRef}>
+        {children}
+      </div>
     </div>
   );
 };
@@ -36,6 +38,18 @@ const SkeletonCard = () => (
   </div>
 );
 
+const TAGLINE_QUOTES = [
+  { text: "Yeah, well, you know, that's just, like, your opinion, man.", attribution: "The Dude, The Big Lebowski" },
+  { text: "Everyone's a critic. You wouldn't know true art if it hit you in the face!", attribution: "Squidward Tentacles, SpongeBob SquarePants" },
+  { text: "You can't let a bad review destroy your confidence! You have to ignore it, like I do with the speed limit.", attribution: "Captain Holt, Brooklyn Nine-Nine" },
+  { text: "In many ways, the work of a critic is easy. We risk very little, yet enjoy a position over those who offer up their work and their selves to our judgment.", attribution: "Anton Ego, Ratatouille" },
+  { text: "A thing is a thing, not what is said of that thing.", attribution: "Tabitha Dickinson (quoting Susan Sontag), Birdman" },
+  { text: "It is the spectator, and not life, that art really mirrors.", attribution: "Oscar Wilde, The Picture of Dorian Gray" },
+  { text: "We all make choices, but in the end, our choices make us.", attribution: "Andrew Ryan, BioShock" },
+  { text: "Are you not entertained?", attribution: "Maximus, Gladiator" },
+  { text: "I've seen things you people wouldn't believe.", attribution: "Roy Batty, Blade Runner" },
+];
+
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
@@ -44,7 +58,6 @@ const SearchPage = () => {
   const [trendingShows, setTrendingShows] = useState([]);
   const [trendingGames, setTrendingGames] = useState([]);
   const [trendingBooks, setTrendingBooks] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
   const [topRatedMovies, setTopRatedMovies] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +74,7 @@ const SearchPage = () => {
     const stored = localStorage.getItem('user');
     return stored ? JSON.parse(stored) : null;
   });
+  const [tagline] = useState(() => TAGLINE_QUOTES[Math.floor(Math.random() * TAGLINE_QUOTES.length)]);
 
   // Load recently viewed from localStorage on mount
   useEffect(() => {
@@ -73,16 +87,14 @@ const SearchPage = () => {
     const fetchTrending = async () => {
       setIsTrendingLoading(true);
       try {
-        const [trendingResp, popularResp, topRatedResp] = await Promise.all([
+        const [trendingResp, topRatedResp] = await Promise.all([
           fetch('/api/trending-all').then(r => r.json()),
-          fetch('/api/popular?type=movie').then(r => r.json()),
           fetch('/api/top-rated?type=movie').then(r => r.json()),
         ]);
         setTrendingMovies(trendingResp.movies || []);
         setTrendingShows(trendingResp.shows || []);
         setTrendingGames(trendingResp.games || []);
         setTrendingBooks(trendingResp.books || []);
-        setPopularMovies(popularResp.results || []);
         setTopRatedMovies(topRatedResp.results || []);
       } catch {
         setTrendingMovies([]);
@@ -176,7 +188,7 @@ const SearchPage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/search');
   };
 
   const handleHomeClick = () => {
@@ -188,16 +200,21 @@ const SearchPage = () => {
     { key: 'tv', label: 'Trending TV', data: trendingShows },
     { key: 'games', label: 'Trending Games', data: trendingGames },
     { key: 'books', label: 'Trending Books', data: trendingBooks },
-    { key: 'popular', label: 'Popular Movies', data: popularMovies },
     { key: 'top-rated', label: 'Top Rated Movies', data: topRatedMovies },
   ];
 
   return (
     <div className="search-page">
       <header className="search-header">
-        <button className="header-logo" onClick={handleHomeClick} title="Go to Home">
-          FinalTake
-        </button>
+        <div className="header-brand">
+          <button className="header-logo" onClick={handleHomeClick} title="Go to Home">
+            <span className="logo-accent">Final</span>Take
+          </button>
+          <span className="header-tagline">
+            <span className="header-tagline-line1">Don't just watch it.</span>
+            <span className="header-tagline-line2"><em>Play</em> it, <em>read</em> it, <em>rate</em> it.</span>
+          </span>
+        </div>
         <div className="header-actions">
           <button
             className="btn btn-theme"
@@ -217,24 +234,23 @@ const SearchPage = () => {
               </button>
             </>
           ) : (
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate('/login')}
-            >
-              Login
-            </button>
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate('/login', { state: { mode: 'register' } })}>
+                Sign Up
+              </button>
+              <button className="btn btn-primary" onClick={() => navigate('/login')}>
+                Login
+              </button>
+            </>
           )}
         </div>
       </header>
 
       <div className="search-container">
         <button className="home-button" onClick={handleHomeClick} title="Go to Home">
-          <h1 className="site-title">
-            <span className="star-icon">★</span>
-            FinalTake
-            <span className="star-icon">★</span>
-          </h1>
-          <p className="site-tagline">Share Your Entertainment Experience</p>
+          <h1 className="site-title"><span className="logo-accent">Final</span>Take</h1>
+          <p className="site-tagline">"{tagline.text}"</p>
+          <p className="site-tagline-attribution">— {tagline.attribution}</p>
         </button>
         <form className="search-form" onSubmit={handleSearch}>
           <div className="search-input-group" ref={searchWrapperRef} style={{ position: 'relative' }}>

@@ -74,7 +74,12 @@ const SearchPage = () => {
     const stored = localStorage.getItem('user');
     return stored ? JSON.parse(stored) : null;
   });
-  const [tagline] = useState(() => TAGLINE_QUOTES[Math.floor(Math.random() * TAGLINE_QUOTES.length)]);
+  const [taglineIndex, setTaglineIndex] = useState(() => Math.floor(Math.random() * TAGLINE_QUOTES.length));
+  const tagline = TAGLINE_QUOTES[taglineIndex];
+
+  const cycleTagline = () => {
+    setTaglineIndex(i => (i + 1) % TAGLINE_QUOTES.length);
+  };
 
   // Load recently viewed from localStorage on mount
   useEffect(() => {
@@ -247,7 +252,7 @@ const SearchPage = () => {
       </header>
 
       <div className="search-container">
-        <button className="home-button" onClick={handleHomeClick} title="Go to Home">
+        <button className="home-button" onClick={cycleTagline} title="Click for a new quote">
           <h1 className="site-title"><span className="logo-accent">Final</span>Take</h1>
           <p className="site-tagline">"{tagline.text}"</p>
           <p className="site-tagline-attribution">— {tagline.attribution}</p>

@@ -1,8 +1,10 @@
 """API routes that query TMDB, RAWG, and Google Books as databases"""
-from flask import Blueprint, request, jsonify
+from concurrent.futures import ThreadPoolExecutor
+from flask import Blueprint, request, jsonify, current_app
 from app.tmdb_service import TMDBService
 from app.rawg_service import RAWGService
 from app.gbooks_service import GoogleBooksService
+from app import cache
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 tmdb = TMDBService()
@@ -17,6 +19,7 @@ def health_check():
 
 
 @bp.route('/search', methods=['GET'])
+@cache.cached(timeout=3600, query_string=True)
 def search():
     """
     Search for movies, TV shows, games, or books
@@ -33,16 +36,28 @@ def search():
         return jsonify({'error': 'Query parameter "query" is required'}), 400
     
     if media_type == 'all':
-        # Search movies, TV, and books (no games to optimize API calls)
-        tmdb_results = tmdb.search_media(query, 'multi', page)
-        gbooks_results = gbooks.search_books(query, page)
-        
+        app = current_app._get_current_object()
+
+        def _run(fn, *args):
+            with app.app_context():
+                return fn(*args)
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            f_tmdb = executor.submit(_run, tmdb.search_media, query, 'multi', page)
+            f_rawg = executor.submit(_run, rawg.search_games, query, page)
+            f_books = executor.submit(_run, gbooks.search_books, query, page)
+            tmdb_results = f_tmdb.result()
+            rawg_results = f_rawg.result()
+            gbooks_results = f_books.result()
+
         results = []
         if tmdb_results:
             results.extend(tmdb_results.get('results', []))
+        if rawg_results:
+            results.extend(rawg_results.get('results', []))
         if gbooks_results:
             results.extend(gbooks_results.get('results', []))
-        
+
         return jsonify({
             'results': results,
             'totalResults': len(results),
@@ -73,6 +88,7 @@ def search():
 
 
 @bp.route('/movie/<int:movie_id>', methods=['GET'])
+@cache.cached(timeout=86400)
 def get_movie(movie_id):
     """Get movie details from TMDB"""
     movie = tmdb.get_movie(movie_id)
@@ -87,6 +103,7 @@ def get_movie(movie_id):
 
 
 @bp.route('/tv/<int:tv_id>', methods=['GET'])
+@cache.cached(timeout=86400)
 def get_tv(tv_id):
     """Get TV show details from TMDB"""
     tv = tmdb.get_tv(tv_id)
@@ -101,6 +118,7 @@ def get_tv(tv_id):
 
 
 @bp.route('/genres', methods=['GET'])
+@cache.cached(timeout=86400, query_string=True)
 def get_genres():
     """Get list of genres"""
     media_type = request.args.get('type', 'movie')
@@ -118,15 +136,26 @@ def get_genres():
 
 
 @bp.route('/trending-all', methods=['GET'])
+@cache.cached(timeout=14400)
 def get_trending_all():
     """Get trending movies, TV shows, games, and books in one call (optimized)"""
     try:
-        # Fetch trending from all APIs in parallel
-        movies = tmdb.get_trending('movie', 'week')
-        shows = tmdb.get_trending('tv', 'week')
-        games = rawg.get_trending_games()
-        books = gbooks.get_trending_books()
-        
+        app = current_app._get_current_object()
+
+        def _run(fn, *args):
+            with app.app_context():
+                return fn(*args)
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            f_movies = executor.submit(_run, tmdb.get_trending, 'movie', 'week')
+            f_shows = executor.submit(_run, tmdb.get_trending, 'tv', 'week')
+            f_games = executor.submit(_run, rawg.get_trending_games)
+            f_books = executor.submit(_run, gbooks.get_trending_books)
+            movies = f_movies.result()
+            shows = f_shows.result()
+            games = f_games.result()
+            books = f_books.result()
+
         return jsonify({
             'movies': movies.get('results', []) if movies else [],
             'shows': shows.get('results', []) if shows else [],
@@ -138,6 +167,7 @@ def get_trending_all():
 
 
 @bp.route('/trending', methods=['GET'])
+@cache.cached(timeout=14400, query_string=True)
 def get_trending():
     """Get trending movies/shows/games/books"""
     media_type = request.args.get('type', 'movie')
@@ -170,6 +200,7 @@ def get_trending():
 
 
 @bp.route('/popular', methods=['GET'])
+@cache.cached(timeout=7200, query_string=True)
 def get_popular():
     """Get popular movies/shows"""
     media_type = request.args.get('type', 'movie')
@@ -187,6 +218,7 @@ def get_popular():
 
 
 @bp.route('/top-rated', methods=['GET'])
+@cache.cached(timeout=7200, query_string=True)
 def get_top_rated():
     """Get top rated movies/shows"""
     media_type = request.args.get('type', 'movie')
@@ -204,6 +236,7 @@ def get_top_rated():
 
 
 @bp.route('/media/<media_type>/<int:media_id>', methods=['GET'])
+@cache.cached(timeout=86400)
 def get_media_details(media_type, media_id):
     """Get details for a movie, TV show, or game by type and ID"""
     if media_type == 'movie':
@@ -222,6 +255,7 @@ def get_media_details(media_type, media_id):
 
 
 @bp.route('/media/book/<string:book_id>', methods=['GET'])
+@cache.cached(timeout=86400)
 def get_book_details(book_id):
     """Get details for a book by ID"""
     data = gbooks.get_book(book_id)

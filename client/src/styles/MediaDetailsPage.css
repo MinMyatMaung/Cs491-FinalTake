@@ -48,6 +48,17 @@
   background: var(--bg-secondary);
 }
 
+.media-image-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-image-large.game-image img {
+  object-fit: contain;
+  background: #0a0a0a;
+}
+
 .placeholder-image-large {
   width: 100%;
   height: 100%;
@@ -419,17 +430,55 @@
 }
 
 @media (max-width: 768px) {
+  .media-details-page {
+    padding: 10px;
+  }
+
   .media-image-large {
     height: 300px;
   }
+
   .media-title-large {
     font-size: 28px;
   }
+
   .details-header {
     padding: 20px;
   }
+
+  .genre-tags {
+    gap: 6px;
+  }
+
   .dev-notice {
     position: static;
     margin: 40px auto 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .media-image-large {
+    height: 220px;
+  }
+
+  .media-title-large {
+    font-size: 22px;
+  }
+
+  .media-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .meta-separator {
+    display: none;
+  }
+
+  .review-textarea {
+    font-size: 16px;
+  }
+
+  .reviews-section h2 {
+    font-size: 20px;
   }
 }

@@ -137,7 +137,7 @@ const ProfilePage = () => {
                 >
                   <div className="fav-image">
                     {fav.image_url
-                      ? <img src={fav.image_url} alt={fav.title} />
+                      ? <img src={fav.image_url} alt={fav.title} loading="lazy" />
                       : <div className="fav-placeholder"><span>No Image</span></div>
                     }
                   </div>
@@ -173,7 +173,7 @@ const ProfilePage = () => {
                 >
                   <div className="profile-review-image">
                     {review.image_url
-                      ? <img src={review.image_url} alt={review.title} />
+                      ? <img src={review.image_url} alt={review.title} loading="lazy" />
                       : <div className="fav-placeholder"><span>No Image</span></div>
                     }
                   </div>

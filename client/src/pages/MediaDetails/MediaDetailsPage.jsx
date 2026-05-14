@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
+import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/MediaDetailsPage.css';
 
 const StarPicker = ({ value, onChange }) => (
@@ -21,6 +22,7 @@ const StarPicker = ({ value, onChange }) => (
 const MediaDetailsPage = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [media, setMedia] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -214,15 +216,44 @@ const MediaDetailsPage = () => {
   }
   return (
     <div className="media-details-page">
+      <header className="search-header">
+        <button className="header-logo" onClick={() => navigate('/search')} title="Go to Home">
+          FinalTake
+        </button>
+        <div className="header-actions">
+          <button
+            className="btn btn-theme"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? '☽' : '☀'}
+          </button>
+          {user ? (
+            <>
+              <span className="user-email">{user.email}</span>
+              <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
+                Profile
+              </button>
+              <button className="btn btn-secondary" onClick={() => { localStorage.removeItem('user'); navigate('/login'); }}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>
+              Login
+            </button>
+          )}
+        </div>
+      </header>
       <button className="back-button" onClick={() => navigate('/search')}>
         ← Back to Search
       </button>
 
       <div className="details-container">
         <div className="details-header">
-          <div className="media-image-large">
+          <div className={`media-image-large${media.type === 'game' ? ' game-image' : ''}`}>
             {media.imageUrl ? (
-              <img src={media.imageUrl} alt={media.title} />
+              <img src={media.imageUrl} alt={media.title} loading="lazy" />
             ) : (
               <div className="placeholder-image-large">
                 <span className="placeholder-icon">🎬</span>

@@ -8,14 +8,14 @@
   --border-color: #E5E5E5;
   --card-bg: #FFFFFF;
   --header-bg: #F8F8F8;
-  
+
   /* Accent Colors (same for both themes) */
   --title-yellow: #F4E6C3;
   --star-gold: #FFD700;
   --element-lavender: #7B86B5;
   --content-tangerine: #FF8C42;
   --system-indigo: #5C6B9A;
-  
+
   /* Neutral */
   --white: #FFFFFF;
   --black: #000000;
@@ -109,3 +109,12 @@ code {
 .btn-theme:hover {
   background-color: var(--element-lavender);
   transform: translateY(-2px);
+}
+
+/* Mobile touch targets */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}

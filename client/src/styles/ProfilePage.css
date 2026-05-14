@@ -4,6 +4,25 @@
   transition: background-color 0.3s ease;
 }
 
+.profile-page .back-button {
+  background: transparent;
+  border: 2px solid var(--element-lavender);
+  color: var(--text-primary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.profile-page .back-button:hover {
+  background: var(--element-lavender);
+  color: var(--white);
+  transform: translateX(-5px);
+}
+
 /* Header — matches SearchPage layout */
 .profile-header {
   text-align: center;
@@ -41,7 +60,7 @@
 .profile-content {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 20px 60px;
+  padding: 24px 20px 60px;
 }
 
 /* User info card */

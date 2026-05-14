@@ -1,10 +1,11 @@
 import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/LoginPage.css';
 
 const LoginPage = () => {
-  const [mode, setMode] = useState('login');
+  const location = useLocation();
+  const [mode, setMode] = useState(location.state?.mode || 'login');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

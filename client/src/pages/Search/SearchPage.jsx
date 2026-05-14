@@ -176,7 +176,7 @@ const SearchPage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/search');
   };
 
   const handleHomeClick = () => {
@@ -217,12 +217,14 @@ const SearchPage = () => {
               </button>
             </>
           ) : (
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate('/login')}
-            >
-              Login
-            </button>
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate('/login', { state: { mode: 'register' } })}>
+                Sign Up
+              </button>
+              <button className="btn btn-primary" onClick={() => navigate('/login')}>
+                Login
+              </button>
+            </>
           )}
         </div>
       </header>

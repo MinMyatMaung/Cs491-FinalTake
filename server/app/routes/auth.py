@@ -39,6 +39,33 @@ def _hash_secret(value):
     return hashlib.sha256(value.encode('utf-8')).hexdigest()
 
 
+def _normalize_security_answer(answer):
+    return re.sub(r'\s+', ' ', (answer or '').strip().lower())
+
+
+def _set_security_answer(user, question, answer):
+    normalized_answer = _normalize_security_answer(answer)
+    if not question or not normalized_answer:
+        return 'Security question and answer are required'
+    if len(question.strip()) < 8:
+        return 'Security question must be at least 8 characters'
+    if len(normalized_answer) < 2:
+        return 'Security answer must be at least 2 characters'
+
+    user.security_question = question.strip()
+    user.security_answer_hash = _hash_secret(normalized_answer)
+    return None
+
+
+def _check_security_answer(user, answer):
+    if not user.security_answer_hash:
+        return False
+    return secrets.compare_digest(
+        user.security_answer_hash,
+        _hash_secret(_normalize_security_answer(answer)),
+    )
+
+
 def _normalize_email(email):
     return (email or '').strip().lower()
 
@@ -141,6 +168,8 @@ def register():
     username = (data.get('username') or '').strip()
     password = data.get('password', '')
     twofa_enabled = bool(data.get('twofa_enabled'))
+    security_question = data.get('security_question', '')
+    security_answer = data.get('security_answer', '')
 
     if not email or not username or not password:
         return jsonify({'error': 'Username, email, and password are required'}), 400
@@ -160,6 +189,10 @@ def register():
         return jsonify({'error': 'Username already taken'}), 409
 
     user = User(username=username, email=email, twofa_enabled=False)
+    security_error = _set_security_answer(user, security_question, security_answer)
+    if security_error:
+        return jsonify({'error': security_error}), 400
+
     if twofa_enabled:
         user.totp_secret = pyotp.random_base32()
 
@@ -293,6 +326,7 @@ def forgot_password():
         user.reset_token_expires_at = datetime.utcnow() + timedelta(minutes=15)
         response['demo_reset_token'] = token
         response['demo_reset_url'] = f'/login?reset_token={token}&email={email}'
+        response['security_question'] = user.security_question
 
         db.session.commit()
 
@@ -306,6 +340,7 @@ def reset_password():
     token = data.get('token') or ''
     new_password = data.get('password') or ''
     code = (data.get('code') or '').strip()
+    security_answer = data.get('security_answer') or ''
     user = User.query.filter_by(email=email).first()
 
     if not user or not token:
@@ -320,11 +355,10 @@ def reset_password():
     if not secrets.compare_digest(user.reset_token_hash, _hash_secret(token)):
         return jsonify({'error': 'Invalid or expired reset link'}), 400
 
-    if user.twofa_enabled:
-        if not code:
-            return jsonify({'error': 'Two-factor code is required'}), 400
-        if not _verify_totp(user, code):
-            return jsonify({'error': 'Invalid two-factor code'}), 401
+    verified_with_totp = bool(code and user.twofa_enabled and _verify_totp(user, code))
+    verified_with_security_answer = _check_security_answer(user, security_answer)
+    if not verified_with_totp and not verified_with_security_answer:
+        return jsonify({'error': 'Enter a valid authenticator code or security answer'}), 401
 
     password_error = _validate_password(new_password)
     if password_error:
@@ -340,6 +374,76 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Password reset successful'}), 200
+
+
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    data = request.get_json() or {}
+    user_id = request.headers.get('X-User-Id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    current_password = data.get('current_password') or ''
+    new_password = data.get('new_password') or ''
+    code = (data.get('code') or '').strip()
+    security_answer = data.get('security_answer') or ''
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'Current password and new password are required'}), 400
+
+    if not user.check_password(current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    password_error = _validate_password(new_password)
+    if password_error:
+        return jsonify({'error': password_error}), 400
+
+    if _password_was_used(user, new_password):
+        return jsonify({'error': 'Choose a password you have not used before'}), 400
+
+    verified_with_totp = bool(code and user.twofa_enabled and _verify_totp(user, code))
+    verified_with_security_answer = _check_security_answer(user, security_answer)
+    if not verified_with_totp and not verified_with_security_answer:
+        return jsonify({'error': 'Enter a valid authenticator code or security answer'}), 401
+
+    _save_password(user, new_password)
+    _clear_login_failures(user)
+    db.session.commit()
+
+    return jsonify({'message': 'Password changed successfully'}), 200
+
+
+@auth_bp.route('/update-security-question', methods=['POST'])
+def update_security_question():
+    data = request.get_json() or {}
+    user_id = request.headers.get('X-User-Id')
+
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    current_password = data.get('current_password') or ''
+    if not user.check_password(current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    security_error = _set_security_answer(
+        user,
+        data.get('security_question', ''),
+        data.get('security_answer', ''),
+    )
+    if security_error:
+        return jsonify({'error': security_error}), 400
+
+    db.session.commit()
+    return jsonify({'message': 'Security question updated'}), 200
 
 
 @auth_bp.route('/update-username', methods=['POST'])

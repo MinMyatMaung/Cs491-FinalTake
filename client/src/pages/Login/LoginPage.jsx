@@ -10,6 +10,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const [twofaEnabled, setTwofaEnabled] = useState(false);
   const [twofaCode, setTwofaCode] = useState('');
   const [pendingUserId, setPendingUserId] = useState(null);
@@ -84,7 +86,7 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !securityQuestion || !securityAnswer) {
       setError('Please fill in all fields');
       return;
     }
@@ -94,7 +96,14 @@ const LoginPage = () => {
       const res = await fetch('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, twofa_enabled: twofaEnabled }),
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          security_question: securityQuestion,
+          security_answer: securityAnswer,
+          twofa_enabled: twofaEnabled,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -175,6 +184,8 @@ const LoginPage = () => {
       if (data.demo_reset_token) {
         setResetToken(data.demo_reset_token);
         setDemoMessage(`Demo reset token: ${data.demo_reset_token}`);
+        setSecurityQuestion(data.security_question || '');
+        setSecurityAnswer('');
         setMode('reset');
       } else {
         setDemoMessage(data.message);
@@ -200,7 +211,13 @@ const LoginPage = () => {
       const res = await fetch('/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, token: resetToken, password: newPassword, code: twofaCode }),
+        body: JSON.stringify({
+          email,
+          token: resetToken,
+          password: newPassword,
+          code: twofaCode,
+          security_answer: securityAnswer,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -278,17 +295,41 @@ const LoginPage = () => {
           {demoMessage && <div className="demo-message">{demoMessage}</div>}
 
           {mode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                type="text"
-                id="username"
-                className="form-input"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
+            <>
+              <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  className="form-input"
+                  placeholder="Choose a username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="securityQuestion">Security question</label>
+                <input
+                  type="text"
+                  id="securityQuestion"
+                  className="form-input"
+                  placeholder="Example: What was your first school?"
+                  value={securityQuestion}
+                  onChange={(e) => setSecurityQuestion(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="securityAnswer">Security answer</label>
+                <input
+                  type="text"
+                  id="securityAnswer"
+                  className="form-input"
+                  placeholder="Your answer"
+                  value={securityAnswer}
+                  onChange={(e) => setSecurityAnswer(e.target.value)}
+                />
+              </div>
+            </>
           )}
 
           {mode !== '2fa' && mode !== 'setup2fa' && (
@@ -395,6 +436,22 @@ const LoginPage = () => {
                   placeholder="Only required if enabled"
                   value={twofaCode}
                   onChange={(e) => setTwofaCode(e.target.value)}
+                />
+              </div>
+              {securityQuestion && (
+                <div className="security-question-prompt">
+                  {securityQuestion}
+                </div>
+              )}
+              <div className="form-group">
+                <label htmlFor="resetSecurityAnswer">Security answer</label>
+                <input
+                  type="text"
+                  id="resetSecurityAnswer"
+                  className="form-input"
+                  placeholder="Or answer your security question"
+                  value={securityAnswer}
+                  onChange={(e) => setSecurityAnswer(e.target.value)}
                 />
               </div>
             </>

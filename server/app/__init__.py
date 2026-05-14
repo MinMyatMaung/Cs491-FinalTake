@@ -15,6 +15,8 @@ def _ensure_auth_columns(app):
         'locked_until': 'TIMESTAMP NULL',
         'twofa_enabled': 'BOOLEAN NOT NULL DEFAULT FALSE',
         'totp_secret': 'VARCHAR(64) NULL',
+        'security_question': 'VARCHAR(255) NULL',
+        'security_answer_hash': 'VARCHAR(255) NULL',
         'reset_token_hash': 'VARCHAR(255) NULL',
         'reset_token_expires_at': 'TIMESTAMP NULL',
     }

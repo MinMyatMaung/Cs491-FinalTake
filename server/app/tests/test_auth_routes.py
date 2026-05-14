@@ -8,6 +8,12 @@ from app import create_app
 from app.models import db as _db
 
 
+SECURITY_FIELDS = {
+    "security_question": "What city were you born in?",
+    "security_answer": "Fullerton",
+}
+
+
 @pytest.fixture
 def client():
     # Pass test_config INTO create_app so the in-memory DB is used
@@ -32,7 +38,8 @@ class TestRegister:
         res = client.post("/auth/register", json={
             "email": "new@gmail.com",
             "username": "newuser",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         assert res.status_code == 201
         assert "user" in res.get_json()
@@ -49,12 +56,14 @@ class TestRegister:
         client.post("/auth/register", json={
             "email": "dup@gmail.com",
             "username": "user1",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         res = client.post("/auth/register", json={
             "email": "dup@gmail.com",
             "username": "user2",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         # Accept either status — both indicate duplicate email rejection.
         # This keeps the test stable across issue #30 blueprint decision.
@@ -65,7 +74,8 @@ class TestRegister:
         res = client.post("/auth/register", json={
             "email": "new@unknown-provider.test",
             "username": "unknownprovider",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         assert res.status_code == 400
 
@@ -74,7 +84,8 @@ class TestRegister:
         res = client.post("/auth/register", json={
             "email": "weak@gmail.com",
             "username": "weakuser",
-            "password": "password123"
+            "password": "password123",
+            **SECURITY_FIELDS,
         })
         assert res.status_code == 400
 
@@ -87,7 +98,8 @@ class TestLogin:
         client.post("/auth/register", json={
             "email": "login@gmail.com",
             "username": "loginuser",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         res = client.post("/auth/login", json={
             "email": "login@gmail.com",
@@ -101,7 +113,8 @@ class TestLogin:
         client.post("/auth/register", json={
             "email": "wrong@gmail.com",
             "username": "wronguser",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         res = client.post("/auth/login", json={
             "email": "wrong@gmail.com",
@@ -121,7 +134,8 @@ class TestLogin:
         client.post("/auth/register", json={
             "email": "lockme@gmail.com",
             "username": "lockuser",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         for _ in range(3):
             client.post("/auth/login", json={
@@ -141,7 +155,8 @@ class TestLogin:
             "email": "twofa@gmail.com",
             "username": "twofauser",
             "password": "valid-passphrase-2026",
-            "twofa_enabled": True
+            "twofa_enabled": True,
+            **SECURITY_FIELDS,
         })
         register_data = register_res.get_json()
         assert register_res.status_code == 201
@@ -174,7 +189,8 @@ class TestLogin:
         client.post("/auth/register", json={
             "email": "reset@gmail.com",
             "username": "resetuser",
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
         })
         forgot_res = client.post("/auth/forgot-password", json={
             "email": "reset@gmail.com"
@@ -183,9 +199,26 @@ class TestLogin:
         reset_res = client.post("/auth/reset-password", json={
             "email": "reset@gmail.com",
             "token": token,
-            "password": "valid-passphrase-2026"
+            "password": "valid-passphrase-2026",
+            "security_answer": SECURITY_FIELDS["security_answer"],
         })
         assert reset_res.status_code == 400
+
+    def test_change_password_with_security_answer(self, client):
+        """Logged-in users can change password with security answer"""
+        register_res = client.post("/auth/register", json={
+            "email": "change@gmail.com",
+            "username": "changeuser",
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
+        })
+        user_id = register_res.get_json()["user"]["id"]
+        res = client.post("/auth/change-password", json={
+            "current_password": "valid-passphrase-2026",
+            "new_password": "new-valid-passphrase-2026",
+            "security_answer": SECURITY_FIELDS["security_answer"],
+        }, headers={"X-User-Id": str(user_id)})
+        assert res.status_code == 200
 
 
 """

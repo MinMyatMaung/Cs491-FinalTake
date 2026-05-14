@@ -14,6 +14,8 @@ class User(db.Model):
     locked_until = db.Column(db.DateTime, nullable=True)
     twofa_enabled = db.Column(db.Boolean, nullable=False, default=False)
     totp_secret = db.Column(db.String(64), nullable=True)
+    security_question = db.Column(db.String(255), nullable=True)
+    security_answer_hash = db.Column(db.String(255), nullable=True)
     reset_token_hash = db.Column(db.String(255), nullable=True)
     reset_token_expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

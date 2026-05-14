@@ -217,6 +217,16 @@
   overflow-wrap: anywhere;
 }
 
+.security-question-prompt {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--element-lavender);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
 .btn-full {
   width: 100%;
   margin-top: 10px;

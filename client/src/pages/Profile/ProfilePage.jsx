@@ -42,6 +42,21 @@ const ProfilePage = () => {
   const [newUsername, setNewUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [usernameSuccess, setUsernameSuccess] = useState('');
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    twofaCode: '',
+    securityAnswer: '',
+  });
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [securityForm, setSecurityForm] = useState({
+    currentPassword: '',
+    securityQuestion: '',
+    securityAnswer: '',
+  });
+  const [securityMessage, setSecurityMessage] = useState('');
+  const [securityError, setSecurityError] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -63,7 +78,7 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/search');
+    navigate('/login', { replace: true });
   };
 
   const handleHomeClick = () => {
@@ -153,6 +168,67 @@ const ProfilePage = () => {
       window.location.reload();
     } catch {
       setUsernameError('Cannot reach server.');
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordMessage('');
+
+    try {
+      const res = await fetch('/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': String(user.id),
+        },
+        body: JSON.stringify({
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword,
+          code: passwordForm.twofaCode,
+          security_answer: passwordForm.securityAnswer,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordError(data.error || 'Failed to change password.');
+        return;
+      }
+      setPasswordMessage(data.message || 'Password changed.');
+      setPasswordForm({ currentPassword: '', newPassword: '', twofaCode: '', securityAnswer: '' });
+    } catch {
+      setPasswordError('Cannot reach server.');
+    }
+  };
+
+  const handleSecurityQuestionUpdate = async (e) => {
+    e.preventDefault();
+    setSecurityError('');
+    setSecurityMessage('');
+
+    try {
+      const res = await fetch('/auth/update-security-question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': String(user.id),
+        },
+        body: JSON.stringify({
+          current_password: securityForm.currentPassword,
+          security_question: securityForm.securityQuestion,
+          security_answer: securityForm.securityAnswer,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSecurityError(data.error || 'Failed to update security question.');
+        return;
+      }
+      setSecurityMessage(data.message || 'Security question updated.');
+      setSecurityForm({ currentPassword: '', securityQuestion: '', securityAnswer: '' });
+    } catch {
+      setSecurityError('Cannot reach server.');
     }
   };
 
@@ -288,6 +364,76 @@ const ProfilePage = () => {
             <span className="stat-label">Avg Rating</span>
           </div>
         </div>
+
+        <section className="profile-section">
+          <h3 className="section-title">Account Settings</h3>
+          <form className="account-settings-form" onSubmit={handlePasswordChange}>
+            <h4>Change Password</h4>
+            <div className="settings-grid">
+              <input
+                className="settings-input"
+                type="password"
+                placeholder="Current password"
+                value={passwordForm.currentPassword}
+                onChange={e => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+              />
+              <input
+                className="settings-input"
+                type="password"
+                placeholder="New password"
+                value={passwordForm.newPassword}
+                onChange={e => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+              />
+              <input
+                className="settings-input"
+                type="text"
+                placeholder="Authenticator code"
+                value={passwordForm.twofaCode}
+                onChange={e => setPasswordForm(prev => ({ ...prev, twofaCode: e.target.value }))}
+              />
+              <input
+                className="settings-input"
+                type="text"
+                placeholder="Security answer"
+                value={passwordForm.securityAnswer}
+                onChange={e => setPasswordForm(prev => ({ ...prev, securityAnswer: e.target.value }))}
+              />
+            </div>
+            <button className="btn btn-primary" type="submit">Update Password</button>
+            {passwordError && <p className="settings-error">{passwordError}</p>}
+            {passwordMessage && <p className="settings-success">{passwordMessage}</p>}
+          </form>
+
+          <form className="account-settings-form" onSubmit={handleSecurityQuestionUpdate}>
+            <h4>Security Question</h4>
+            <div className="settings-grid">
+              <input
+                className="settings-input"
+                type="password"
+                placeholder="Current password"
+                value={securityForm.currentPassword}
+                onChange={e => setSecurityForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+              />
+              <input
+                className="settings-input"
+                type="text"
+                placeholder="Security question"
+                value={securityForm.securityQuestion}
+                onChange={e => setSecurityForm(prev => ({ ...prev, securityQuestion: e.target.value }))}
+              />
+              <input
+                className="settings-input"
+                type="text"
+                placeholder="Security answer"
+                value={securityForm.securityAnswer}
+                onChange={e => setSecurityForm(prev => ({ ...prev, securityAnswer: e.target.value }))}
+              />
+            </div>
+            <button className="btn btn-secondary" type="submit">Save Security Question</button>
+            {securityError && <p className="settings-error">{securityError}</p>}
+            {securityMessage && <p className="settings-success">{securityMessage}</p>}
+          </form>
+        </section>
 
         {/* Last 3 Reviews Section */}
         {!reviewsLoading && recentReviews.length > 0 && (

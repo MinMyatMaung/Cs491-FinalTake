@@ -195,7 +195,7 @@ const SearchPage = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/search');
+    navigate('/login', { replace: true });
   };
 
   const handleHomeClick = () => {

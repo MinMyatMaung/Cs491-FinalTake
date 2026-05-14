@@ -204,8 +204,8 @@ class TestLogin:
         })
         assert reset_res.status_code == 400
 
-    def test_change_password_with_security_answer(self, client):
-        """Logged-in users can change password with security answer"""
+    def test_change_password_while_logged_in(self, client):
+        """Logged-in users can change password with only current password"""
         register_res = client.post("/auth/register", json={
             "email": "change@gmail.com",
             "username": "changeuser",
@@ -216,7 +216,6 @@ class TestLogin:
         res = client.post("/auth/change-password", json={
             "current_password": "valid-passphrase-2026",
             "new_password": "new-valid-passphrase-2026",
-            "security_answer": SECURITY_FIELDS["security_answer"],
         }, headers={"X-User-Id": str(user_id)})
         assert res.status_code == 200
 

@@ -45,8 +45,6 @@ const ProfilePage = () => {
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
-    twofaCode: '',
-    securityAnswer: '',
   });
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -186,8 +184,6 @@ const ProfilePage = () => {
         body: JSON.stringify({
           current_password: passwordForm.currentPassword,
           new_password: passwordForm.newPassword,
-          code: passwordForm.twofaCode,
-          security_answer: passwordForm.securityAnswer,
         }),
       });
       const data = await res.json();
@@ -196,7 +192,7 @@ const ProfilePage = () => {
         return;
       }
       setPasswordMessage(data.message || 'Password changed.');
-      setPasswordForm({ currentPassword: '', newPassword: '', twofaCode: '', securityAnswer: '' });
+      setPasswordForm({ currentPassword: '', newPassword: '' });
     } catch {
       setPasswordError('Cannot reach server.');
     }
@@ -383,20 +379,6 @@ const ProfilePage = () => {
                 placeholder="New password"
                 value={passwordForm.newPassword}
                 onChange={e => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-              />
-              <input
-                className="settings-input"
-                type="text"
-                placeholder="Authenticator code"
-                value={passwordForm.twofaCode}
-                onChange={e => setPasswordForm(prev => ({ ...prev, twofaCode: e.target.value }))}
-              />
-              <input
-                className="settings-input"
-                type="text"
-                placeholder="Security answer"
-                value={passwordForm.securityAnswer}
-                onChange={e => setPasswordForm(prev => ({ ...prev, securityAnswer: e.target.value }))}
               />
             </div>
             <button className="btn btn-primary" type="submit">Update Password</button>

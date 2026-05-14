@@ -183,7 +183,7 @@ const LoginPage = () => {
       }
       if (data.demo_reset_token) {
         setResetToken(data.demo_reset_token);
-        setDemoMessage(`Demo reset token: ${data.demo_reset_token}`);
+        setDemoMessage(`Email reset token: ${data.demo_reset_token}`);
         setSecurityQuestion(data.security_question || '');
         setSecurityAnswer('');
         setMode('reset');

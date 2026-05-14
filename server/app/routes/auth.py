@@ -390,8 +390,6 @@ def change_password():
 
     current_password = data.get('current_password') or ''
     new_password = data.get('new_password') or ''
-    code = (data.get('code') or '').strip()
-    security_answer = data.get('security_answer') or ''
 
     if not current_password or not new_password:
         return jsonify({'error': 'Current password and new password are required'}), 400
@@ -405,11 +403,6 @@ def change_password():
 
     if _password_was_used(user, new_password):
         return jsonify({'error': 'Choose a password you have not used before'}), 400
-
-    verified_with_totp = bool(code and user.twofa_enabled and _verify_totp(user, code))
-    verified_with_security_answer = _check_security_answer(user, security_answer)
-    if not verified_with_totp and not verified_with_security_answer:
-        return jsonify({'error': 'Enter a valid authenticator code or security answer'}), 401
 
     _save_password(user, new_password)
     _clear_login_failures(user)

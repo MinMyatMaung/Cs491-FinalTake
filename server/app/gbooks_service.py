@@ -116,27 +116,29 @@ class GoogleBooksService:
         }
 
     def get_trending_books(self, page=1):
-        """Get trending books — bestsellers + recent popular fiction, merged and deduplicated"""
-        bestsellers = self._get('/volumes', {
-            'q': 'bestseller',
+        """Get trending books — popular fiction + thrillers, rated titles only"""
+        fiction = self._get('/volumes', {
+            'q': 'subject:fiction',
             'orderBy': 'relevance',
             'startIndex': 0,
-            'maxResults': 12,
+            'maxResults': 15,
         })
-        recent_fiction = self._get('/volumes', {
-            'q': 'subject:fiction',
-            'orderBy': 'newest',
+        thriller = self._get('/volumes', {
+            'q': 'subject:thriller',
+            'orderBy': 'relevance',
             'startIndex': 0,
-            'maxResults': 12,
+            'maxResults': 15,
         })
 
         seen = set()
         results = []
-        for source in [bestsellers, recent_fiction]:
+        for source in [fiction, thriller]:
             if source:
                 for item in source.get('items', []):
-                    if item.get('id') not in seen:
-                        seen.add(item['id'])
+                    vid = item.get('id')
+                    rating = item.get('volumeInfo', {}).get('averageRating', 0)
+                    if vid not in seen and rating and rating > 0:
+                        seen.add(vid)
                         results.append(self._normalize(item))
 
         return {'results': results[:20]}

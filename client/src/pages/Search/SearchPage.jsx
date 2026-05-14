@@ -44,6 +44,9 @@ const SearchPage = () => {
   const [trendingShows, setTrendingShows] = useState([]);
   const [trendingGames, setTrendingGames] = useState([]);
   const [trendingBooks, setTrendingBooks] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isTrendingLoading, setIsTrendingLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,16 +62,28 @@ const SearchPage = () => {
     return stored ? JSON.parse(stored) : null;
   });
 
-  // Fetch trending on mount
+  // Load recently viewed from localStorage on mount
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    setRecentlyViewed(stored);
+  }, []);
+
+  // Fetch trending + popular + top-rated on mount
   useEffect(() => {
     const fetchTrending = async () => {
       setIsTrendingLoading(true);
       try {
-        const response = await fetch('/api/trending-all').then(r => r.json());
-        setTrendingMovies(response.movies || []);
-        setTrendingShows(response.shows || []);
-        setTrendingGames(response.games || []);
-        setTrendingBooks(response.books || []);
+        const [trendingResp, popularResp, topRatedResp] = await Promise.all([
+          fetch('/api/trending-all').then(r => r.json()),
+          fetch('/api/popular?type=movie').then(r => r.json()),
+          fetch('/api/top-rated?type=movie').then(r => r.json()),
+        ]);
+        setTrendingMovies(trendingResp.movies || []);
+        setTrendingShows(trendingResp.shows || []);
+        setTrendingGames(trendingResp.games || []);
+        setTrendingBooks(trendingResp.books || []);
+        setPopularMovies(popularResp.results || []);
+        setTopRatedMovies(topRatedResp.results || []);
       } catch {
         setTrendingMovies([]);
         setTrendingShows([]);
@@ -169,10 +184,12 @@ const SearchPage = () => {
   };
 
   const trendingTabs = [
-    { key: 'movies', label: 'Movies', data: trendingMovies },
-    { key: 'tv', label: 'TV Shows', data: trendingShows },
-    { key: 'games', label: 'Games', data: trendingGames },
-    { key: 'books', label: 'Books', data: trendingBooks },
+    { key: 'movies', label: 'Trending Movies', data: trendingMovies },
+    { key: 'tv', label: 'Trending TV', data: trendingShows },
+    { key: 'games', label: 'Trending Games', data: trendingGames },
+    { key: 'books', label: 'Trending Books', data: trendingBooks },
+    { key: 'popular', label: 'Popular Movies', data: popularMovies },
+    { key: 'top-rated', label: 'Top Rated Movies', data: topRatedMovies },
   ];
 
   return (
@@ -310,6 +327,26 @@ const SearchPage = () => {
 
         {!error && !hasSearched && (
           <>
+            {recentlyViewed.length > 0 && (
+              <div className="recently-viewed-section">
+                <div className="results-header">
+                  <h2>Recently Viewed</h2>
+                </div>
+                <HorizontalScrollRow>
+                  {recentlyViewed.map((item) => (
+                    <MediaCard
+                      key={`rv-${item.type}-${item.id}`}
+                      id={item.id}
+                      title={item.title}
+                      type={item.type}
+                      rating={item.rating}
+                      imageUrl={item.imageUrl}
+                    />
+                  ))}
+                </HorizontalScrollRow>
+              </div>
+            )}
+
             <div className="trending-tabs">
               {trendingTabs.map(({ key, label }) => (
                 <button

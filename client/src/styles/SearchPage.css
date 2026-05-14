@@ -320,6 +320,11 @@
   border-radius: 3px;
 }
 
+/* Recently viewed section */
+.recently-viewed-section {
+  margin-bottom: 40px;
+}
+
 /* Trending tabs */
 .trending-tabs {
   display: flex;

@@ -132,5 +132,6 @@ class TMDBService:
         data = self._get(f'/{media_type}/top_rated', {'page': page})
         if data is None:
             return None
-        data['results'] = [self._normalize(r, media_type) for r in data.get('results', [])]
+        filtered = [r for r in data.get('results', []) if r.get('vote_count', 0) >= 5000]
+        data['results'] = [self._normalize(r, media_type) for r in filtered]
         return data

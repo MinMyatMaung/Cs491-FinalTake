@@ -185,24 +185,40 @@ class TestLogin:
         assert verify_res.status_code == 200
 
     def test_password_reset_rejects_reuse(self, client):
-        """Reset password cannot reuse a previous password"""
+        """Security-question reset cannot reuse a previous password"""
         client.post("/auth/register", json={
             "email": "reset@gmail.com",
             "username": "resetuser",
             "password": "valid-passphrase-2026",
             **SECURITY_FIELDS,
         })
-        forgot_res = client.post("/auth/forgot-password", json={
-            "email": "reset@gmail.com"
-        })
-        token = forgot_res.get_json()["demo_reset_token"]
         reset_res = client.post("/auth/reset-password", json={
             "email": "reset@gmail.com",
-            "token": token,
             "password": "valid-passphrase-2026",
+            "reset_method": "security",
             "security_answer": SECURITY_FIELDS["security_answer"],
         })
         assert reset_res.status_code == 400
+
+    def test_password_reset_with_email_token(self, client):
+        """Email reset method uses the reset token"""
+        client.post("/auth/register", json={
+            "email": "emailreset@gmail.com",
+            "username": "emailresetuser",
+            "password": "valid-passphrase-2026",
+            **SECURITY_FIELDS,
+        })
+        forgot_res = client.post("/auth/forgot-password", json={
+            "email": "emailreset@gmail.com"
+        })
+        token = forgot_res.get_json()["demo_reset_token"]
+        reset_res = client.post("/auth/reset-password", json={
+            "email": "emailreset@gmail.com",
+            "token": token,
+            "password": "new-valid-passphrase-2026",
+            "reset_method": "email",
+        })
+        assert reset_res.status_code == 200
 
     def test_change_password_while_logged_in(self, client):
         """Logged-in users can change password with only current password"""

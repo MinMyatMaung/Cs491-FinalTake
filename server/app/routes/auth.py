@@ -341,24 +341,29 @@ def reset_password():
     new_password = data.get('password') or ''
     code = (data.get('code') or '').strip()
     security_answer = data.get('security_answer') or ''
+    reset_method = data.get('reset_method') or 'email'
     user = User.query.filter_by(email=email).first()
 
-    if not user or not token:
-        return jsonify({'error': 'Invalid or expired reset link'}), 400
+    if not user:
+        return jsonify({'error': 'Invalid reset request'}), 400
 
-    if not user.reset_token_hash or not user.reset_token_expires_at:
-        return jsonify({'error': 'Invalid or expired reset link'}), 400
-
-    if user.reset_token_expires_at < datetime.utcnow():
-        return jsonify({'error': 'Invalid or expired reset link'}), 400
-
-    if not secrets.compare_digest(user.reset_token_hash, _hash_secret(token)):
-        return jsonify({'error': 'Invalid or expired reset link'}), 400
-
-    verified_with_totp = bool(code and user.twofa_enabled and _verify_totp(user, code))
-    verified_with_security_answer = _check_security_answer(user, security_answer)
-    if not verified_with_totp and not verified_with_security_answer:
-        return jsonify({'error': 'Enter a valid authenticator code or security answer'}), 401
+    if reset_method == 'email':
+        if not token:
+            return jsonify({'error': 'Reset token is required'}), 400
+        if not user.reset_token_hash or not user.reset_token_expires_at:
+            return jsonify({'error': 'Invalid or expired reset link'}), 400
+        if user.reset_token_expires_at < datetime.utcnow():
+            return jsonify({'error': 'Invalid or expired reset link'}), 400
+        if not secrets.compare_digest(user.reset_token_hash, _hash_secret(token)):
+            return jsonify({'error': 'Invalid or expired reset link'}), 400
+    elif reset_method == '2fa':
+        if not code or not user.twofa_enabled or not _verify_totp(user, code):
+            return jsonify({'error': 'Invalid authenticator code'}), 401
+    elif reset_method == 'security':
+        if not _check_security_answer(user, security_answer):
+            return jsonify({'error': 'Invalid security answer'}), 401
+    else:
+        return jsonify({'error': 'Choose a valid reset method'}), 400
 
     password_error = _validate_password(new_password)
     if password_error:

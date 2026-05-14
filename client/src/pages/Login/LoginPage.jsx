@@ -16,6 +16,7 @@ const LoginPage = () => {
   const [twofaCode, setTwofaCode] = useState('');
   const [pendingUserId, setPendingUserId] = useState(null);
   const [resetToken, setResetToken] = useState('');
+  const [resetMethod, setResetMethod] = useState('email');
   const [demoMessage, setDemoMessage] = useState('');
   const [twofaSetup, setTwofaSetup] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -169,6 +170,23 @@ const LoginPage = () => {
       return;
     }
 
+    setMode('reset-choice');
+  };
+
+  const handleResetMethodSelect = async (method) => {
+    setError('');
+    setDemoMessage('');
+    setResetMethod(method);
+    setResetToken('');
+    setTwofaCode('');
+    setSecurityAnswer('');
+
+    if (!email) {
+      setError('Enter your email');
+      setMode('forgot');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await fetch('/auth/forgot-password', {
@@ -181,15 +199,20 @@ const LoginPage = () => {
         setError(data.error || 'Reset failed');
         return;
       }
-      if (data.demo_reset_token) {
+      setSecurityQuestion(data.security_question || '');
+
+      if (method === 'email' && data.demo_reset_token) {
         setResetToken(data.demo_reset_token);
         setDemoMessage(`Email reset token: ${data.demo_reset_token}`);
-        setSecurityQuestion(data.security_question || '');
-        setSecurityAnswer('');
-        setMode('reset');
-      } else {
+      } else if (method === '2fa') {
+        setDemoMessage('Enter the 6-digit code from your authenticator app.');
+      } else if (method === 'security') {
+        setDemoMessage('Answer your security question to reset your password.');
+      } else if (!data.demo_reset_token) {
         setDemoMessage(data.message);
       }
+
+      setMode('reset');
     } catch {
       setError('Cannot reach server. Make sure the backend is running.');
     } finally {
@@ -201,8 +224,23 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
 
-    if (!email || !resetToken || !newPassword) {
-      setError('Email, reset token, and new password are required');
+    if (!email || !newPassword) {
+      setError('Email and new password are required');
+      return;
+    }
+
+    if (resetMethod === 'email' && !resetToken) {
+      setError('Reset token is required');
+      return;
+    }
+
+    if (resetMethod === '2fa' && !twofaCode) {
+      setError('Authenticator code is required');
+      return;
+    }
+
+    if (resetMethod === 'security' && !securityAnswer) {
+      setError('Security answer is required');
       return;
     }
 
@@ -217,6 +255,7 @@ const LoginPage = () => {
           password: newPassword,
           code: twofaCode,
           security_answer: securityAnswer,
+          reset_method: resetMethod,
         }),
       });
       const data = await res.json();
@@ -228,6 +267,7 @@ const LoginPage = () => {
       setNewPassword('');
       setResetToken('');
       setTwofaCode('');
+      setSecurityAnswer('');
       setDemoMessage(data.message);
       setMode('login');
     } catch {
@@ -279,6 +319,8 @@ const LoginPage = () => {
                   ? handleVerify2fa
                   : mode === 'forgot'
                     ? handleForgotPassword
+                    : mode === 'reset-choice'
+                      ? (e) => e.preventDefault()
                     : handleResetPassword
           }
         >
@@ -288,6 +330,7 @@ const LoginPage = () => {
             {mode === '2fa' && 'Verify Code'}
             {mode === 'setup2fa' && 'Set Up 2FA'}
             {mode === 'forgot' && 'Forgot Password'}
+            {mode === 'reset-choice' && 'Choose Reset Method'}
             {mode === 'reset' && 'Reset Password'}
           </h2>
 
@@ -403,19 +446,35 @@ const LoginPage = () => {
             </div>
           )}
 
+          {mode === 'reset-choice' && (
+            <div className="reset-methods">
+              <button type="button" className="btn btn-secondary btn-full" onClick={() => handleResetMethodSelect('email')}>
+                Email reset link
+              </button>
+              <button type="button" className="btn btn-secondary btn-full" onClick={() => handleResetMethodSelect('2fa')}>
+                Authenticator app
+              </button>
+              <button type="button" className="btn btn-secondary btn-full" onClick={() => handleResetMethodSelect('security')}>
+                Security question
+              </button>
+            </div>
+          )}
+
           {mode === 'reset' && (
             <>
-              <div className="form-group">
-                <label htmlFor="resetToken">Reset token</label>
-                <input
-                  type="text"
-                  id="resetToken"
-                  className="form-input"
-                  placeholder="Paste reset token"
-                  value={resetToken}
-                  onChange={(e) => setResetToken(e.target.value)}
-                />
-              </div>
+              {resetMethod === 'email' && (
+                <div className="form-group">
+                  <label htmlFor="resetToken">Reset token</label>
+                  <input
+                    type="text"
+                    id="resetToken"
+                    className="form-input"
+                    placeholder="Paste reset token"
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="newPassword">New password</label>
                 <input
@@ -427,33 +486,39 @@ const LoginPage = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="resetTwofaCode">2FA code</label>
-                <input
-                  type="text"
-                  id="resetTwofaCode"
-                  className="form-input"
-                  placeholder="Only required if enabled"
-                  value={twofaCode}
-                  onChange={(e) => setTwofaCode(e.target.value)}
-                />
-              </div>
-              {securityQuestion && (
-                <div className="security-question-prompt">
-                  {securityQuestion}
+              {resetMethod === '2fa' && (
+                <div className="form-group">
+                  <label htmlFor="resetTwofaCode">Authenticator code</label>
+                  <input
+                    type="text"
+                    id="resetTwofaCode"
+                    className="form-input"
+                    placeholder="000000"
+                    value={twofaCode}
+                    onChange={(e) => setTwofaCode(e.target.value)}
+                  />
                 </div>
               )}
-              <div className="form-group">
-                <label htmlFor="resetSecurityAnswer">Security answer</label>
-                <input
-                  type="text"
-                  id="resetSecurityAnswer"
-                  className="form-input"
-                  placeholder="Or answer your security question"
-                  value={securityAnswer}
-                  onChange={(e) => setSecurityAnswer(e.target.value)}
-                />
-              </div>
+              {resetMethod === 'security' && (
+                <>
+                  {securityQuestion && (
+                    <div className="security-question-prompt">
+                      {securityQuestion}
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label htmlFor="resetSecurityAnswer">Security answer</label>
+                    <input
+                      type="text"
+                      id="resetSecurityAnswer"
+                      className="form-input"
+                      placeholder="Your answer"
+                      value={securityAnswer}
+                      onChange={(e) => setSecurityAnswer(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -464,6 +529,7 @@ const LoginPage = () => {
             {!isLoading && mode === '2fa' && 'Verify'}
             {!isLoading && mode === 'setup2fa' && 'Enable 2FA'}
             {!isLoading && mode === 'forgot' && 'Send Reset'}
+            {!isLoading && mode === 'reset-choice' && 'Choose an Option'}
             {!isLoading && mode === 'reset' && 'Reset Password'}
           </button>
 
@@ -484,7 +550,7 @@ const LoginPage = () => {
                 Sign up
               </button>
             </p>
-          ) : mode === '2fa' || mode === 'setup2fa' ? (
+          ) : mode === '2fa' || mode === 'setup2fa' || mode === 'reset-choice' ? (
             <p className="signup-text">
               <button className="signup-link" onClick={() => { setMode('login'); setError(''); setDemoMessage(''); }}>
                 Back to login

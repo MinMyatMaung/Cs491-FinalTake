@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect, useRef, useCallback } from 'react';
+import { useState, useContext, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/LoginPage.css';
@@ -15,11 +15,10 @@ const LoginPage = () => {
   const [pendingUserId, setPendingUserId] = useState(null);
   const [resetToken, setResetToken] = useState('');
   const [demoMessage, setDemoMessage] = useState('');
+  const [twofaSetup, setTwofaSetup] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const googleButtonRef = useRef(null);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const navigate = useNavigate();
   const { theme, toggleTheme } = useContext(ThemeContext);
 
@@ -38,67 +37,6 @@ const LoginPage = () => {
     localStorage.setItem('user', JSON.stringify({ ...user, isLoggedIn: true }));
     navigate('/search');
   }, [navigate]);
-
-  const handleGoogleCredential = useCallback(async (idToken) => {
-    setError('');
-    setDemoMessage('');
-    setIsLoading(true);
-    try {
-      const res = await fetch('/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: idToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Google sign-in failed');
-        return;
-      }
-      finishLogin(data.user);
-    } catch {
-      setError('Cannot reach server. Make sure the backend is running.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [finishLogin]);
-
-  useEffect(() => {
-    if (mode !== 'login' || !googleClientId || !googleButtonRef.current) {
-      return undefined;
-    }
-
-    const initializeGoogleButton = () => {
-      if (!window.google?.accounts?.id || !googleButtonRef.current) {
-        return;
-      }
-      googleButtonRef.current.innerHTML = '';
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: (response) => handleGoogleCredential(response.credential),
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        width: 340,
-      });
-    };
-
-    if (window.google?.accounts?.id) {
-      initializeGoogleButton();
-      return undefined;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeGoogleButton;
-    document.body.appendChild(script);
-
-    return () => {
-      script.onload = null;
-    };
-  }, [mode, googleClientId, handleGoogleCredential]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -123,8 +61,15 @@ const LoginPage = () => {
       }
       if (data.requires_2fa) {
         setPendingUserId(data.user_id);
-        setDemoMessage(data.demo_2fa_code ? `Demo 2FA code: ${data.demo_2fa_code}` : '');
+        setDemoMessage('Enter the 6-digit code from your authenticator app.');
         setMode('2fa');
+        return;
+      }
+      if (data.requires_2fa_setup) {
+        setPendingUserId(data.user_id);
+        setTwofaSetup(data.twofa_setup);
+        setDemoMessage('Scan the QR code with your authenticator app, then enter the 6-digit code.');
+        setMode('setup2fa');
         return;
       }
       finishLogin(data.user);
@@ -156,6 +101,13 @@ const LoginPage = () => {
         setError(data.error || 'Registration failed');
         return;
       }
+      if (data.requires_2fa_setup) {
+        setPendingUserId(data.user_id);
+        setTwofaSetup(data.twofa_setup);
+        setDemoMessage('Scan the QR code with your authenticator app, then enter the 6-digit code.');
+        setMode('setup2fa');
+        return;
+      }
       finishLogin(data.user);
     } catch {
       setError('Cannot reach server. Make sure the backend is running.');
@@ -175,7 +127,7 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch('/auth/verify-2fa', {
+      const res = await fetch(mode === 'setup2fa' ? '/auth/confirm-2fa' : '/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: pendingUserId, code: twofaCode }),
@@ -185,6 +137,7 @@ const LoginPage = () => {
         setError(data.error || 'Verification failed');
         return;
       }
+      setTwofaSetup(null);
       finishLogin(data.user);
     } catch {
       setError('Cannot reach server. Make sure the backend is running.');
@@ -217,10 +170,7 @@ const LoginPage = () => {
       }
       if (data.demo_reset_token) {
         setResetToken(data.demo_reset_token);
-        setDemoMessage([
-          data.demo_reset_token ? `Demo reset token: ${data.demo_reset_token}` : '',
-          data.demo_2fa_code ? `Demo 2FA code: ${data.demo_2fa_code}` : '',
-        ].filter(Boolean).join(' | '));
+        setDemoMessage(`Demo reset token: ${data.demo_reset_token}`);
         setMode('reset');
       } else {
         setDemoMessage(data.message);
@@ -266,29 +216,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleDemo = async () => {
-    setError('');
-    setDemoMessage('');
-    setIsLoading(true);
-    try {
-      const res = await fetch('/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Google sign-in failed');
-        return;
-      }
-      finishLogin(data.user);
-    } catch {
-      setError('Cannot reach server. Make sure the backend is running.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleHomeClick = () => {
     navigate('/search');
   };
@@ -327,7 +254,7 @@ const LoginPage = () => {
               ? handleLogin
               : mode === 'register'
                 ? handleRegister
-                : mode === '2fa'
+                : mode === '2fa' || mode === 'setup2fa'
                   ? handleVerify2fa
                   : mode === 'forgot'
                     ? handleForgotPassword
@@ -338,6 +265,7 @@ const LoginPage = () => {
             {mode === 'login' && 'Login'}
             {mode === 'register' && 'Create Account'}
             {mode === '2fa' && 'Verify Code'}
+            {mode === 'setup2fa' && 'Set Up 2FA'}
             {mode === 'forgot' && 'Forgot Password'}
             {mode === 'reset' && 'Reset Password'}
           </h2>
@@ -359,7 +287,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          {mode !== '2fa' && (
+          {mode !== '2fa' && mode !== 'setup2fa' && (
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -404,11 +332,18 @@ const LoginPage = () => {
                 checked={twofaEnabled}
                 onChange={(e) => setTwofaEnabled(e.target.checked)}
               />
-              Enable demo 2FA
+              Enable authenticator app 2FA
             </label>
           )}
 
-          {mode === '2fa' && (
+          {mode === 'setup2fa' && twofaSetup && (
+            <div className="totp-setup">
+              <img src={twofaSetup.qr_code_data_url} alt="Authenticator app QR code" />
+              <p className="manual-key">{twofaSetup.manual_entry_key}</p>
+            </div>
+          )}
+
+          {(mode === '2fa' || mode === 'setup2fa') && (
             <div className="form-group">
               <label htmlFor="twofaCode">Verification code</label>
               <input
@@ -465,25 +400,17 @@ const LoginPage = () => {
             {!isLoading && mode === 'login' && 'Login'}
             {!isLoading && mode === 'register' && 'Create Account'}
             {!isLoading && mode === '2fa' && 'Verify'}
+            {!isLoading && mode === 'setup2fa' && 'Enable 2FA'}
             {!isLoading && mode === 'forgot' && 'Send Reset'}
             {!isLoading && mode === 'reset' && 'Reset Password'}
           </button>
 
           {mode === 'login' && (
-            <>
-              {googleClientId ? (
-                <div className="google-button-wrap" ref={googleButtonRef} />
-              ) : (
-                <button type="button" className="btn btn-secondary btn-full" onClick={handleGoogleDemo} disabled={isLoading}>
-                  Continue with Google
-                </button>
-              )}
-              <div className="forgot-password-section">
-                <button type="button" className="forgot-password-link" onClick={() => { setMode('forgot'); setError(''); }}>
-                  Forgot password?
-                </button>
-              </div>
-            </>
+            <div className="forgot-password-section">
+              <button type="button" className="forgot-password-link" onClick={() => { setMode('forgot'); setError(''); }}>
+                Forgot password?
+              </button>
+            </div>
           )}
         </form>
 
@@ -495,9 +422,9 @@ const LoginPage = () => {
                 Sign up
               </button>
             </p>
-          ) : mode === '2fa' ? (
+          ) : mode === '2fa' || mode === 'setup2fa' ? (
             <p className="signup-text">
-              <button className="signup-link" onClick={() => { setMode('login'); setError(''); }}>
+              <button className="signup-link" onClick={() => { setMode('login'); setError(''); setDemoMessage(''); }}>
                 Back to login
               </button>
             </p>

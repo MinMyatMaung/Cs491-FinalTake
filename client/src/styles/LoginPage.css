@@ -188,11 +188,27 @@
   margin: 0 0 20px;
 }
 
-.google-button-wrap {
-  display: flex;
-  justify-content: center;
-  min-height: 44px;
-  margin-top: 10px;
+.totp-setup {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.totp-setup img {
+  width: 180px;
+  height: 180px;
+  border-radius: 4px;
+  background: #fff;
+  padding: 8px;
+}
+
+.manual-key {
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .btn-full {

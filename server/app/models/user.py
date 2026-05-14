@@ -10,12 +10,10 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    auth_provider = db.Column(db.String(20), nullable=False, default='local')
     failed_login_attempts = db.Column(db.Integer, nullable=False, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
     twofa_enabled = db.Column(db.Boolean, nullable=False, default=False)
-    twofa_code_hash = db.Column(db.String(255), nullable=True)
-    twofa_expires_at = db.Column(db.DateTime, nullable=True)
+    totp_secret = db.Column(db.String(64), nullable=True)
     reset_token_hash = db.Column(db.String(255), nullable=True)
     reset_token_expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -31,7 +29,6 @@ class User(db.Model):
             'id': self.id,
             'username': self.username,
             'email': self.email,
-            'auth_provider': self.auth_provider,
             'twofa_enabled': self.twofa_enabled,
             'created_at': self.created_at.isoformat()
         }

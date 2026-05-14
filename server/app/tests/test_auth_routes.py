@@ -3,6 +3,7 @@ Test suite for auth routes (register and login endpoints).
 Methodology: Integration testing with Flask test client and in-memory SQLite.
 """
 import pytest
+import pyotp
 from app import create_app
 from app.models import db as _db
 
@@ -134,14 +135,25 @@ class TestLogin:
         })
         assert res.status_code == 423
 
-    def test_login_with_demo_2fa(self, client):
-        """2FA-enabled account requires and verifies a code"""
-        client.post("/auth/register", json={
+    def test_login_with_totp_2fa(self, client):
+        """TOTP-enabled account requires and verifies an authenticator code"""
+        register_res = client.post("/auth/register", json={
             "email": "twofa@gmail.com",
             "username": "twofauser",
             "password": "valid-passphrase-2026",
             "twofa_enabled": True
         })
+        register_data = register_res.get_json()
+        assert register_res.status_code == 201
+        assert register_data["requires_2fa_setup"] is True
+
+        setup_code = pyotp.TOTP(register_data["twofa_setup"]["manual_entry_key"]).now()
+        confirm_res = client.post("/auth/confirm-2fa", json={
+            "user_id": register_data["user_id"],
+            "code": setup_code
+        })
+        assert confirm_res.status_code == 200
+
         login_res = client.post("/auth/login", json={
             "email": "twofa@gmail.com",
             "password": "valid-passphrase-2026"
@@ -150,9 +162,10 @@ class TestLogin:
         assert login_res.status_code == 202
         assert login_data["requires_2fa"] is True
 
+        login_code = pyotp.TOTP(register_data["twofa_setup"]["manual_entry_key"]).now()
         verify_res = client.post("/auth/verify-2fa", json={
             "user_id": login_data["user_id"],
-            "code": login_data["demo_2fa_code"]
+            "code": login_code
         })
         assert verify_res.status_code == 200
 
@@ -173,14 +186,6 @@ class TestLogin:
             "password": "valid-passphrase-2026"
         })
         assert reset_res.status_code == 400
-
-    def test_google_demo_login_creates_user(self, client):
-        """Demo Google login creates a local Google-provider user"""
-        res = client.post("/auth/google", json={
-            "email": "googledemo@gmail.com"
-        })
-        assert res.status_code == 200
-        assert res.get_json()["user"]["auth_provider"] == "google"
 
 
 """

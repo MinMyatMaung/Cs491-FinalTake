@@ -6,7 +6,6 @@ Usage:
     python noahscript.py
 """
 from datetime import datetime, timedelta
-import random
 
 from app import create_app, db
 from app.models.favorite import Favorite
@@ -164,7 +163,6 @@ def ensure_favorite(user, media, created_at):
 
 
 def main():
-    random.seed(491)
     app = create_app()
 
     with app.app_context():
@@ -179,18 +177,28 @@ def main():
             user, created = ensure_user(username, email)
             users_created += int(created)
 
-            picks = random.sample(MEDIA, k=5)
-            favorite_picks = random.sample(picks, k=3)
-
-            for media_index, media in enumerate(picks):
-                created_at = base_date + timedelta(days=index * 2 + media_index)
-                rating = random.randint(3, 5)
-                body = random.choice(REVIEW_BODIES)
+            for media_index, media in enumerate(MEDIA):
+                created_at = base_date + timedelta(days=index * len(MEDIA) + media_index)
+                rating = 3 + ((index + media_index) % 3)
+                body = REVIEW_BODIES[(index + media_index) % len(REVIEW_BODIES)]
                 reviews_created += int(ensure_review(user, media, rating, body, created_at))
 
-            for media_index, media in enumerate(favorite_picks):
-                created_at = base_date + timedelta(days=index * 2 + media_index, hours=6)
-                favorites_created += int(ensure_favorite(user, media, created_at))
+                if (index + media_index) % 2 == 0:
+                    favorite_created_at = created_at + timedelta(hours=6)
+                    favorites_created += int(ensure_favorite(user, media, favorite_created_at))
+
+        # Ensure every media item is also favorited by at least one demo user.
+        first_user = User.query.filter_by(email=USERS[0][1]).first()
+        for media_index, media in enumerate(MEDIA):
+            if not first_user:
+                break
+            existing_count = Favorite.query.filter_by(
+                media_id=str(media['media_id']),
+                media_type=media['media_type'],
+            ).count()
+            if existing_count == 0:
+                created_at = base_date + timedelta(days=media_index, hours=12)
+                favorites_created += int(ensure_favorite(first_user, media, created_at))
 
         db.session.commit()
 

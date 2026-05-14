@@ -12,9 +12,9 @@ with app.app_context():
 
     if not User.query.filter_by(email='test@test.com').first():
         user = User(username='testuser', email='test@test.com')
-        user.set_password('password123')
+        user.set_password('test-passphrase-2026')
         db.session.add(user)
         db.session.commit()
-        print('Test user created: test@test.com / password123')
+        print('Test user created: test@test.com / test-passphrase-2026')
     else:
         print('Test user already exists, skipping.')

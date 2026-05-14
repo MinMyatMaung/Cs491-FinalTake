@@ -25,6 +25,20 @@ class Config:
     GBOOKS_API_KEY = os.getenv('GBOOKS_API_KEY', '')
     GBOOKS_BASE_URL = 'https://www.googleapis.com/books/v1'
 
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+    GOOGLE_OAUTH_DEMO_ENABLED = os.getenv('GOOGLE_OAUTH_DEMO_ENABLED', 'True').lower() in ('1', 'true')
+
+    EMAIL_PROVIDER_DOMAINS = {
+        domain.strip().lower()
+        for domain in os.getenv(
+            'EMAIL_PROVIDER_DOMAINS',
+            'gmail.com,googlemail.com,outlook.com,hotmail.com,live.com,msn.com,'
+            'yahoo.com,ymail.com,icloud.com,me.com,mac.com,aol.com,proton.me,'
+            'protonmail.com,zoho.com,gmx.com,mail.com,csu.fullerton.edu,fullerton.edu'
+        ).split(',')
+        if domain.strip()
+    }
+
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() in ('1', 'true')
 
     CACHE_TYPE = 'SimpleCache'

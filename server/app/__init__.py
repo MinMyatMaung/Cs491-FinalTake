@@ -1,10 +1,36 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_caching import Cache
+from sqlalchemy import inspect
 from .config import Config
 from .models import db
 
 cache = Cache()
+
+
+def _ensure_auth_columns(app):
+    """Add auth columns for existing demo SQLite/Postgres databases."""
+    required_columns = {
+        'auth_provider': "VARCHAR(20) NOT NULL DEFAULT 'local'",
+        'failed_login_attempts': 'INTEGER NOT NULL DEFAULT 0',
+        'locked_until': 'TIMESTAMP NULL',
+        'twofa_enabled': 'BOOLEAN NOT NULL DEFAULT FALSE',
+        'twofa_code_hash': 'VARCHAR(255) NULL',
+        'twofa_expires_at': 'TIMESTAMP NULL',
+        'reset_token_hash': 'VARCHAR(255) NULL',
+        'reset_token_expires_at': 'TIMESTAMP NULL',
+    }
+
+    inspector = inspect(db.engine)
+    if 'users' not in inspector.get_table_names():
+        return
+
+    existing_columns = {column['name'] for column in inspector.get_columns('users')}
+    for column_name, column_type in required_columns.items():
+        if column_name not in existing_columns:
+            db.session.execute(db.text(f'ALTER TABLE users ADD COLUMN {column_name} {column_type}'))
+
+    db.session.commit()
 
 
 def create_app(test_config=None):
@@ -38,5 +64,6 @@ def create_app(test_config=None):
     # Create database tables
     with app.app_context():
         db.create_all()
+        _ensure_auth_columns(app)
 
     return app

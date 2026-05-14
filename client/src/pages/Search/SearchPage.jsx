@@ -342,7 +342,10 @@ const SearchPage = () => {
                       key={value}
                       type="button"
                       className="filter-menu-item"
-                      onClick={() => setSelectedType(value)}
+                      onClick={() => {
+                      setSelectedType(value);
+                      setShowSuggestions(false);
+                    }}
                     >
                       <span>{selectedType === value ? '✓' : ''}</span>
                       {label}
@@ -365,7 +368,10 @@ const SearchPage = () => {
                       key={value}
                       type="button"
                       className="filter-menu-item"
-                      onClick={() => setSortBy(value)}
+                      onClick={() => {
+                      setSortBy(value);
+                      setShowSuggestions(false);
+                    }}
                     >
                       <span>{sortBy === value ? '✓' : ''}</span>
                       {label}

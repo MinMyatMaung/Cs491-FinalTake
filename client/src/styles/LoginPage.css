@@ -196,11 +196,17 @@
 }
 
 .totp-setup img {
-  width: 180px;
-  height: 180px;
+  width: 220px;
+  height: 220px;
   border-radius: 4px;
   background: #fff;
   padding: 8px;
+}
+
+.manual-key-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .manual-key {

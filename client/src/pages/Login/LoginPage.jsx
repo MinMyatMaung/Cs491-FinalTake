@@ -102,9 +102,13 @@ const LoginPage = () => {
         return;
       }
       if (data.requires_2fa_setup) {
+        if (!data.twofa_setup?.qr_code_data_url || !data.twofa_setup?.manual_entry_key) {
+          setError('Two-factor setup failed. Redeploy the backend with the latest requirements.');
+          return;
+        }
         setPendingUserId(data.user_id);
         setTwofaSetup(data.twofa_setup);
-        setDemoMessage('Scan the QR code with your authenticator app, then enter the 6-digit code.');
+        setDemoMessage('Scan this QR code in your authenticator app, then enter the 6-digit code.');
         setMode('setup2fa');
         return;
       }
@@ -339,6 +343,7 @@ const LoginPage = () => {
           {mode === 'setup2fa' && twofaSetup && (
             <div className="totp-setup">
               <img src={twofaSetup.qr_code_data_url} alt="Authenticator app QR code" />
+              <span className="manual-key-label">Manual setup key</span>
               <p className="manual-key">{twofaSetup.manual_entry_key}</p>
             </div>
           )}

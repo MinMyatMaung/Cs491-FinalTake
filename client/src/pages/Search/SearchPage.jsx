@@ -136,7 +136,7 @@ const SearchPage = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedType]);
+  }, [searchQuery]);
 
   // Close suggestions when clicking outside
   useEffect(() => {

@@ -125,7 +125,6 @@ const SearchPage = () => {
     const timer = setTimeout(async () => {
       try {
         const params = new URLSearchParams({ query: searchQuery.trim(), limit: 5 });
-        if (selectedType !== 'all') params.append('type', selectedType);
         const res = await fetch(`/api/search?${params}`);
         if (!res.ok) return;
         const data = await res.json();
@@ -166,7 +165,6 @@ const SearchPage = () => {
 
     try {
       const params = new URLSearchParams({ query: searchQuery.trim() });
-      if (selectedType !== 'all') params.append('type', selectedType);
 
       const res = await fetch(`/api/search?${params}`);
       if (!res.ok) {

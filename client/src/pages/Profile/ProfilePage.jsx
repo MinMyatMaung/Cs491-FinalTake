@@ -81,6 +81,10 @@ const ProfilePage = () => {
       </header>
 
       <div className="profile-content">
+        <button className="back-button" onClick={() => navigate('/search')}>
+          ← Back to Search
+        </button>
+
         {/* User Info Card */}
         <div className="profile-card">
           <div className="profile-avatar">

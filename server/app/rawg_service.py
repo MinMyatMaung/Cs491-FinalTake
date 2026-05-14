@@ -87,14 +87,14 @@ class RAWGService:
         }
 
     def get_trending_games(self, page=1):
-        """Get trending/popular games"""
+        """Get trending games — most recently added to user libraries, quality-filtered"""
         data = self._get('/games', {
-            'ordering': '-rating',
+            'ordering': '-added',
+            'metacritic': '70,100',
             'page': page,
-            'page_size': 20
+            'page_size': 20,
         })
         if data is None:
             return None
-        
         data['results'] = [self._normalize(r) for r in data.get('results', [])]
         return data

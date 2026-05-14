@@ -58,6 +58,15 @@ const MediaDetailsPage = () => {
     fetchDetails();
   }, [type, id]);
 
+  // Save to recently viewed
+  useEffect(() => {
+    if (!media) return;
+    const recent = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    const entry = { id: String(id), type, title: media.title, imageUrl: media.imageUrl, rating: media.rating };
+    const filtered = recent.filter(r => !(String(r.id) === String(id) && r.type === type));
+    localStorage.setItem('recentlyViewed', JSON.stringify([entry, ...filtered].slice(0, 10)));
+  }, [media]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Check favorite status once media is loaded
   useEffect(() => {
     if (!user || !id || !type) return;
@@ -264,6 +273,9 @@ const MediaDetailsPage = () => {
           <div className="media-info-section">
             <div className="type-badge">{media.type}</div>
             <h1 className="media-title-large">{media.title}</h1>
+            {media.tagline && media.tagline !== media.title && (
+              <p className="media-tagline">"{media.tagline}"</p>
+            )}
             <div className="media-meta">
               <span className="meta-item">{media.releaseYear}</span>
               <span className="meta-separator">•</span>
@@ -274,7 +286,12 @@ const MediaDetailsPage = () => {
               <div className="stars-display">
                 {renderStars(media.rating)}
               </div>
-              <span className="rating-number">{media.rating.toFixed(1)} / 5.0</span>
+              <span className="rating-number">
+                {media.rating.toFixed(1)} / 5.0
+                {media.voteCount > 0 && (
+                  <span className="vote-count">({media.voteCount.toLocaleString()} votes)</span>
+                )}
+              </span>
             </div>
 
             <div className="genre-tags">
@@ -282,6 +299,14 @@ const MediaDetailsPage = () => {
                 <span key={index} className="genre-tag">{g}</span>
               ))}
             </div>
+
+            {media.platforms && media.platforms.length > 0 && (
+              <div className="platform-tags">
+                {media.platforms.slice(0, 5).map((p, i) => (
+                  <span key={i} className="platform-tag">{p}</span>
+                ))}
+              </div>
+            )}
 
             <button
               className={`favorite-button ${isFavorite ? 'favorited' : ''}`}
@@ -296,8 +321,28 @@ const MediaDetailsPage = () => {
         <div className="details-body">
           <section className="description-section">
             <h2>Description</h2>
+            {media.type === 'book' && (media.publisher || media.pages) && (
+              <div className="book-meta">
+                {media.publisher && <span>Publisher: {media.publisher}</span>}
+                {media.pages > 0 && <span>{media.pages} pages</span>}
+              </div>
+            )}
             <p>{media.description}</p>
           </section>
+
+          {media.cast && media.cast.length > 0 && (
+            <section className="cast-section">
+              <h2>Cast & Crew</h2>
+              <div className="cast-grid">
+                {media.cast.slice(0, 8).map((member, i) => (
+                  <div key={i} className="cast-card">
+                    <p className="cast-name">{member.name}</p>
+                    <p className="cast-role">{member.character}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="reviews-section">
             <h2>Reviews</h2>

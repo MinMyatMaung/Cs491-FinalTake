@@ -116,16 +116,29 @@ class GoogleBooksService:
         }
 
     def get_trending_books(self, page=1):
-        """Get popular/trending books - use standard subject query"""
-        # Google Books doesn't have a trending endpoint, so we'll search for popular subjects
-        data = self._get('/volumes', {
+        """Get trending books — popular fiction + thrillers, rated titles only"""
+        fiction = self._get('/volumes', {
             'q': 'subject:fiction',
             'orderBy': 'relevance',
-            'startIndex': (page - 1) * 10,
-            'maxResults': 20
+            'startIndex': 0,
+            'maxResults': 15,
         })
-        if data is None:
-            return None
-        
-        data['results'] = [self._normalize(r) for r in data.get('items', [])]
-        return data
+        thriller = self._get('/volumes', {
+            'q': 'subject:thriller',
+            'orderBy': 'relevance',
+            'startIndex': 0,
+            'maxResults': 15,
+        })
+
+        seen = set()
+        results = []
+        for source in [fiction, thriller]:
+            if source:
+                for item in source.get('items', []):
+                    vid = item.get('id')
+                    rating = item.get('volumeInfo', {}).get('averageRating', 0)
+                    if vid not in seen and rating and rating > 0:
+                        seen.add(vid)
+                        results.append(self._normalize(item))
+
+        return {'results': results[:20]}

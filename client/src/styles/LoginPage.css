@@ -168,6 +168,33 @@
   border: 1px solid var(--content-tangerine);
 }
 
+.demo-message {
+  background-color: rgba(166, 227, 161, 0.15);
+  color: var(--text-primary);
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  border: 1px solid rgba(166, 227, 161, 0.45);
+  overflow-wrap: anywhere;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.google-button-wrap {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 10px;
+}
+
 .btn-full {
   width: 100%;
   margin-top: 10px;

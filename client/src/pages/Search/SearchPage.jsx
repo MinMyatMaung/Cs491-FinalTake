@@ -210,13 +210,22 @@ const SearchPage = () => {
     { key: 'top-rated', label: 'Top Rated Movies', data: topRatedMovies },
   ];
 
-  const sortedResults = [...mediaResults].sort((a, b) => {
+  const filteredResults =
+  selectedType === 'all'
+    ? mediaResults
+    : mediaResults.filter((media) => media.type === selectedType);
+
+  const sortedResults = [...filteredResults].sort((a, b) => {
     if (sortBy === 'highest') {
       return (b.rating || 0) - (a.rating || 0);
     }
 
     if (sortBy === 'lowest') {
       return (a.rating || 0) - (b.rating || 0);
+    }
+
+    if (sortBy === 'popular') {
+      return (b.popularity || 0) - (a.popularity || 0);
     }
 
     if (sortBy === 'az') {

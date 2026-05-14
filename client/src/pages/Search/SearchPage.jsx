@@ -230,7 +230,7 @@ const SearchPage = () => {
           </button>
           {user ? (
             <>
-              <span className="user-email">{user.email}</span>
+              <span className="user-email">{user.username}</span>
               <button className="btn btn-secondary" onClick={() => navigate('/profile')}>
                 Profile
               </button>

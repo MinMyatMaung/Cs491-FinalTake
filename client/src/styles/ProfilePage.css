@@ -46,6 +46,25 @@
 
 .profile-header .header-content .home-button {
   grid-column: 2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+.profile-header .site-title {
+  color: var(--text-primary);
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-bottom: 8px;
+}
+
+.profile-header .site-tagline {
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-style: italic;
+  margin: 0 auto 4px;
 }
 
 .profile-header .header-actions {
@@ -414,4 +433,170 @@
     width: 48px;
     height: 72px;
   }
+}
+
+/* Profile picture */
+.profile-avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-pic-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-pic {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.btn-pic-remove {
+  color: #e55;
+  border-color: #e55;
+}
+
+.profile-top-type {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  color: #888;
+}
+
+/* Recently reviewed row */
+.recent-reviews-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.recent-review-card {
+  width: 120px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.recent-review-image {
+  width: 120px;
+  height: 180px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.recent-review-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recent-review-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-review-stars {
+  font-size: 0.8rem;
+  color: #f5c518;
+}
+
+/* Inline edit form */
+.inline-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.inline-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Edit button on review card */
+.profile-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.btn-edit-review {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.btn-edit-review:hover {
+  background: rgba(0,0,0,0.05);
+}
+/* Username editing */
+.username-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-edit-username {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #888;
+  padding: 2px 4px;
+}
+
+.btn-edit-username:hover {
+  color: #333;
+}
+
+.username-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.username-input {
+  padding: 6px 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: transparent;
+  color: inherit;
+}
+
+.username-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.username-error {
+  color: #e55;
+  font-size: 0.8rem;
+}
+
+.username-success {
+  color: #4a4;
+  font-size: 0.8rem;
 }

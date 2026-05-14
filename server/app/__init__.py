@@ -45,8 +45,8 @@ def create_app(test_config=None):
 
     # Allow requests from the Vite dev server
     CORS(app, resources={
-        r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]},
-        r"/auth/*": {"origins": ["http://localhost:5173", "http://localhost:3000"]}
+    r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:3000", "https://cs491-final-take.vercel.app"]},
+    r"/auth/*": {"origins": ["http://localhost:5173", "http://localhost:3000", "https://cs491-final-take.vercel.app"]}
     })
 
     from .api_routes import bp
